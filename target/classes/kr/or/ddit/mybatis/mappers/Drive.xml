@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.drive.dao.DriveDAO">
+	<!-- 파일 메타데이터 DB 업뎃 -->
+	<insert id="insertFile" parameterType="DriveAtchVO">
+		INSERT INTO drive_atch (
+		    drive_atch_no,
+		    drive_id,
+		    drive_atch_type,
+		    drive_atch_origin_name,
+		    drive_atch_save_name,
+		    emp_id,
+		    drive_atch_rgst_date,
+<!-- 		    isopen, -->
+		    drive_atch_size,
+		    drive_file_root
+		) VALUES (
+			DRIVE_ATCH_SEQ.NEXTVAL
+			, #{driveId,jdbcType=NUMERIC}
+			, #{driveAtchType,jdbcType=VARCHAR}
+			, #{driveAtchOriginName,jdbcType=VARCHAR}
+			, #{driveAtchSaveName,jdbcType=VARCHAR}
+			, #{empId,jdbcType=VARCHAR}
+			, SYSTIMESTAMP
+<!-- 			, #{isopen,jdbcType=NUMERIC} -->
+			, #{driveAtchSize,jdbcType=NUMERIC}
+			, #{driveFileRoot,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<!-- 폴더 메타데이터 DB 업뎃 -->
+	<insert id="insertFolder" parameterType="DriveVO">
+		INSERT INTO drive (
+		    drive_id,
+		    drive_root,
+<!-- 		    drive_isopen, -->
+		    team_id,
+		    drive_id2,
+		    drive_path
+		) VALUES (
+			DRIVE_SEQ.NEXTVAL
+			, #{driveRoot,jdbcType=VARCHAR}
+<!-- 			, #{driveIsopen,jdbcType=NUMERIC} -->
+			, #{teamId,jdbcType=NUMERIC}
+			, #{driveId2,jdbcType=NUMERIC}
+			, #{drivePath,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	
+	
+	
+	
+	<select id="selectFileList" parameterType="DriveAtchVO">
+		SELECT
+		    drive_atch_no,
+		    drive_id,
+		    drive_atch_type,
+		    drive_atch_origin_name,
+		    drive_atch_save_name,
+		    emp_id,
+		    drive_atch_rgst_date,
+		    isopen,
+		    drive_atch_size,
+		    drive_file_root
+		FROM
+		    drive_atch
+		WHERE
+			drive_id = #{driveId,jdbcType=NUMERIC}
+	<if test='filterType != "" '>
+		<choose>
+			<when test=' filterType != "image" and filterType != "video" '>
+			and 
+			(
+				drive_atch_type LIKE '%haansofthwp%'
+				or drive_atch_type LIKE '%pdf%'
+				or drive_atch_type LIKE '%msword%'
+				or drive_atch_type LIKE '%openxmlformats-officedocument%'
+				or drive_atch_type LIKE '%openxmlformats%'
+				or drive_atch_type LIKE '%vnd.ms-%'
+				or drive_atch_type LIKE '%text%'
+				or drive_atch_type LIKE '%rtf%'
+			)
+			</when>
+			<otherwise>
+			and drive_atch_type LIKE '%' || #{filterType,jdbcType=VARCHAR} || '%'    
+			</otherwise>
+		</choose>
+	</if>
+		ORDER BY drive_atch_origin_name ASC
+	</select>
+	
+	<select id="selectFolderList" parameterType="DriveVO">
+		SELECT
+		    drive_id,
+		    drive_root,
+		    drive_isopen,
+		    team_id,
+		    drive_id2,
+		    drive_path
+		FROM
+		    drive
+		WHERE
+			drive_id2 = #{driveId,jdbcType=NUMERIC}
+		ORDER BY drive_root ASC
+	</select>
+	
+	
+	<select id="selelctFolderListJoin" parameterType="DriveVO">
+		SELECT
+		    drive_id,
+		    drive_root,
+		    drive_isopen,
+		    drive.team_id,
+		    drive_id2,
+		    drive_path
+		FROM
+		    drive RIGHT OUTER JOIN department d ON (drive.team_id = d.team_id)
+		WHERE
+		    drive_id2 = #{driveId,jdbcType=NUMERIC}  
+			and (drive.team_id = #{teamId,jdbcType=NUMERIC} or d.belong_team = #{teamId,jdbcType=NUMERIC})
+		ORDER BY drive_root ASC
+	</select>
+	
+	
+	
+	
+	<select id="selectFile" parameterType="DriveAtchVO" resultType="DriveAtchVO">
+		SELECT
+		    drive_atch_no,
+		    drive_id,
+		    drive_atch_type,
+		    drive_atch_origin_name,
+		    drive_atch_save_name,
+		    emp_id,
+		    drive_atch_rgst_date,
+		    isopen,
+		    drive_atch_size,
+		    drive_file_root
+		FROM
+		    drive_atch
+		WHERE
+			drive_atch_no = #{driveAtchNo,jdbcType=NUMERIC}
+	</select>
+	
+	
+	<select id="selectFolder" parameterType="DriveVO" resultType="DriveVO">
+		SELECT
+		    drive_id,
+		    drive_root,
+		    drive_isopen,
+		    team_id,
+		    drive_id2,
+		    drive_path
+		FROM
+		    drive
+		WHERE
+			drive_id = #{driveId,jdbcType=NUMERIC}
+	</select>
+	
+	
+	
+	
+	
+	<update id="updateFileName" parameterType="DriveAtchVO">
+		UPDATE drive_atch
+		SET
+		    drive_atch_origin_name = #{driveAtchOriginName,jdbcType=VARCHAR}
+		WHERE
+		     drive_atch_no = #{driveAtchNo,jdbcType=NUMERIC}
+	</update>
+	
+	<delete id="deleteFile" parameterType="DriveAtchVO">
+		DELETE FROM drive_atch
+		WHERE
+		    drive_atch_no = #{driveAtchNo,jdbcType=NUMERIC}
+	</delete>
+	
+	
+	
+	
+	
+	
+	<update id="updateFolderName" parameterType="DriveVO">
+		UPDATE drive
+		SET
+		    drive_root = #{driveRoot,jdbcType=VARCHAR}
+		    , drive_path = (  SELECT  REPLACE(SYS_CONNECT_BY_PATH(drive_root, '\'), '\/', '') || '\' ||#{driveRoot,jdbcType=VARCHAR} AS drive_path
+	    FROM (
+              SELECT *
+              FROM drive
+              ORDER BY drive_id DESC
+	        )
+        WHERE DRIVE_ID = #{driveId2,jdbcType=NUMERIC}
+        START WITH drive_id = 1
+        CONNECT BY PRIOR drive_id = drive_id2 )
+		WHERE
+		    drive_id = #{driveId,jdbcType=NUMERIC}
+	</update>
+	
+	<update id="updateFolderNameOnDriveAtch" parameterType="int">
+		UPDATE drive_atch
+		SET
+		    drive_file_root = (SELECT DRIVE_PATH FROM DRIVE WHERE DRIVE_ID = #{driveId,jdbcType=NUMERIC}) || '\'
+		WHERE
+		     drive_id = #{driveId,jdbcType=NUMERIC}
+	</update>
+	
+	<delete id="deleteFolder" parameterType="DriveVO">
+		DELETE FROM drive
+		WHERE
+		    drive_id = #{driveId,jdbcType=NUMERIC}
+	</delete>
+	
+	<delete id="deleteFolderFileList" parameterType="int">
+		DELETE FROM drive_atch
+		WHERE
+		    drive_id = #{driveId,jdbcType=NUMERIC}
+	</delete>
+	
+	
+	
+	
+	
+	<select id="selectDrivePath" parameterType="DriveVO" resultType="DriveVO">
+	    SELECT  REPLACE(SYS_CONNECT_BY_PATH(drive_root, '\'), '\/', '') || '\' ||#{driveRoot,jdbcType=VARCHAR} AS drive_path
+	    FROM (
+              SELECT *
+              FROM drive
+              ORDER BY drive_id DESC
+	        )
+        WHERE DRIVE_ID = #{driveId2,jdbcType=NUMERIC}
+        START WITH drive_id = 1
+        CONNECT BY PRIOR drive_id = drive_id2
+	</select>
+	
+	<select id="selectDriveFileRoot" parameterType="DriveAtchVO" resultType="DriveAtchVO">
+	    SELECT  REPLACE(SYS_CONNECT_BY_PATH(drive_root, '\'), '\/', '') || '\' AS drive_file_root
+	    FROM (
+	              SELECT *
+	              FROM drive
+	              ORDER BY drive_id DESC
+	        )
+	    WHERE DRIVE_ID = #{driveId,jdbcType=NUMERIC}
+	    START WITH drive_id = 1
+	    CONNECT BY PRIOR drive_id = drive_id2
+	</select>
+</mapper>
+
+<!-- , #{driveAtchNo,jdbcType=NUMERIC} -->
+<!-- , #{driveId,jdbcType=NUMERIC} -->
+<!-- , #{driveAtchType,jdbcType=VARCHAR} -->
+<!-- , #{driveAtchOriginName,jdbcType=VARCHAR} -->
+<!-- , #{driveAtchSaveName,jdbcType=VARCHAR} -->
+<!-- , #{empId,jdbcType=VARCHAR} -->
+<!-- , #{driveAtchRgstDate,jdbcType=TIMESTAMP(6)} -->
+<!-- , #{isopen,jdbcType=NUMERIC} -->
+<!-- , #{driveAtchSize,jdbcType=NUMERIC} -->
+<!-- , #{driveFileRoot,jdbcType=VARCHAR} -->
+
+<!-- , #{driveId,jdbcType=NUMERIC} -->
+<!-- , #{driveRoot,jdbcType=VARCHAR} -->
+<!-- , #{driveIsopen,jdbcType=NUMERIC} -->
+<!-- , #{teamId,jdbcType=NUMERIC} -->
+<!-- , #{driveId2,jdbcType=NUMERIC} -->

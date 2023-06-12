@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.commons.dao.CommDAO">
+	
+	<select id="selectF">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'F%'
+	</select>
+	<select id="selectG">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'G%'
+	</select>
+	<select id="selectH">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'H%'
+	</select>
+	<select id="selectI">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'I%'
+	</select>
+	<select id="selectD">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'D%'
+	</select>
+	<select id="selectA">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'A%'
+	</select>
+	<select id="selectB">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'B%'
+	</select>
+	<select id="selectS">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'S%'
+	</select>
+	<select id="selectK">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'K%'
+	</select>
+	<select id="selectC">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'C%'
+	</select>
+	<select id="selectM">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'M%'
+	</select>
+	<select id="selectE">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'E%'
+	</select>
+	<select id="selectJ">
+		SELECT COMM_ID, COMM_NAME
+		FROM COMM
+		WHERE COMM_ID LIKE 'J%'
+	</select>
+</mapper>

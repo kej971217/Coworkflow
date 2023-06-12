@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.board.project.dao.ProjectBoardDAO">
+
+	<!-- 프로젝트 목록 -->
+	<select id="selectProjectBoardList" parameterType="string" resultType="ProjectVO">
+		SELECT A.PROJECT_ID,
+		    A.PROJECT_NAME,
+		    A.PROJECT_GOAL,
+		    A.ISUSE,
+		    A.BOARD_ID
+		FROM
+		    PROJECT A
+		WHERE A.EMP_ID= #{empId} AND A.ISUSE = 0 OR A.ISUSE = 1
+		
+		UNION
+		
+		SELECT A.PROJECT_ID,
+		    A.PROJECT_NAME,
+		    A.PROJECT_GOAL,
+		    A.ISUSE,
+		    A.BOARD_ID
+		FROM
+		    PROJECT A
+		    WHERE A.PROJECT_ID = (
+		        SELECT 
+		            B.PROJECT_ID
+		        FROM
+		            PROJECT_TEAM B
+		        WHERE B.EMP_ID= #{empId}
+		) AND A.ISUSE = 0 OR A.ISUSE = 1
+		ORDER BY PROJECT_ID DESC
+
+	</select>
+
+
+	<!-- 프로젝트 조회 -->
+	<select id="selectProjectBoard" parameterType="ProjectVO" resultType="ProjectVO">
+		SELECT
+		    PROJECT_ID,
+		    PROJECT_NAME,
+		    PROJECT_GOAL,
+		    ISUSE,
+		    BOARD_ID,
+		    EMP_ID,
+		    TO_CHAR(PROJECT_GOAL_DATE,'YYYY-MM-DD') PROJECT_GOAL_DATE,
+		    TO_CHAR(PROJECT_START_DATE,'YYYY-MM-DD') PROJECT_START_DATE,
+		    TO_CHAR(PROJECT_CREATE_DATE,'YYYY-MM-DD') PROJECT_CREATE_DATE,
+			(SELECT ROUND(AVG(POST_PROGRESS))
+			 FROM POST
+			 WHERE BOARD_ID = #{boardId}) PROJECT_PROGRESS
+		FROM
+		    PROJECT
+		WHERE PROJECT_ID = #{projectId}
+	</select>
+	
+	
+	
+	<!-- 프로젝트 등록 -->
+	<insert id="insertProjectBoard" parameterType="ProjectVO">
+			<selectKey order="BEFORE" resultType="string" keyProperty="boardId">
+				SELECT TO_CHAR('P') || LPAD(
+				    TO_NUMBER (MAX(SUBSTR(BOARD_ID, 2))) + 1,
+				    3,
+				    '0'
+					) BOARD_ID
+				FROM BOARD
+				WHERE BOARD_CLASSIFICATION = 'C003'
+			</selectKey>
+		INSERT INTO PROJECT (
+		    PROJECT_ID,
+		    PROJECT_NAME,
+		    PROJECT_GOAL,
+		    ISUSE,
+		    PROJECT_CREATE_DATE,
+		    PROJECT_START_DATE,
+		    PROJECT_GOAL_DATE,
+		    EMP_ID,
+		    BOARD_ID,
+		    PROJECT_PROGRESS
+		) VALUES (
+		    PROJECT_SEQ.NEXTVAL,
+		    #{projectName,jdbcType=VARCHAR},
+		    #{projectGoal,jdbcType=VARCHAR},
+		    0,
+		    SYSDATE,
+		    #{projectStartDate,jdbcType=TIMESTAMP},
+		    #{projectGoalDate,jdbcType=TIMESTAMP},
+		    #{empId,jdbcType=VARCHAR},
+		    #{boardId,jdbcType=VARCHAR},
+		    0
+		)
+	</insert>
+	
+	
+	<!-- 보드 아이디 등록 -->
+	<insert id="insertBoardId" parameterType="string">
+		INSERT INTO BOARD (
+		    BOARD_ID,
+		    BOARD_NAME,
+		    BOARD_OPEN_DATE,
+		    ISUSE,
+		    BOARD_CLASSIFICATION
+		) VALUES (
+		    #{boardId},
+		    '프로젝트',
+		    SYSDATE,
+		    0,
+		    'C003'
+		)
+	</insert>
+	
+	<!-- 팀 아이디 보드에 등록  -->
+	<insert id="insertTeamId" parameterType="int">
+		INSERT INTO BOARD(
+			TEAM_ID
+		) VALUES(
+			#{projectId}
+		)
+	</insert>
+	
+	
+	
+	<!-- 프로젝트 검색 -->
+	<select id="searchProjectBoard" parameterType="string" resultType="ProjectVO">
+		SELECT *
+		FROM PROJECT
+		WHERE PROJECT_NAME LIKE '%' || #{schWord} || '%' OR PROJECT_GOAL LIKE '%' ||
+		#{schWord} || '%' AND BOARD_ID = 'P001' AND ISUSE = 0 OR ISUSE = 1
+	</select>
+	
+	
+	<!-- 프로젝트 팀원 등록 -->
+	<insert id="insertProjectTeam" parameterType="ProjectTeamVO">
+		INSERT INTO PROJECT_TEAM (
+		    PRJT_TEAM_ID,
+		    PRJT_TEAM_REGIST_DATE,
+		    EMP_ID,
+		    ISUSE,
+		    PROJECT_ID
+		) VALUES (
+		    PROJECT_TEAM_SEQ.NEXTVAL,
+		    #{prjtTeamRegistDate,jdbcType=VARCHAR},
+		    #{empId,jdbcType=VARCHAR},
+		    0,
+		    #{projectId,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	
+	
+	<!-- 팀원 검색 -->
+	<resultMap type="OrganizationInfoVO" id="empMap" autoMapping="true">
+		<id property="empId" column="empId"/>
+		<collection property="empList" ofType="EmployeeVO" autoMapping="true"></collection>
+	</resultMap>
+	<select id="searchEmp" resultMap="empMap">
+		SELECT
+		    A.EMP_ID,
+		    A.TEAM_ID,
+		    A.ISUSE,
+		    A.RANK_ID,
+		    A.POSITION_ID,
+		    B.EMP_ID,
+		    B.EMP_NAME
+		FROM ORGANIZATION_INFO A
+		JOIN EMPLOYEE B
+		ON A.EMP_ID = B.EMP_ID
+		WHERE A.ISUSE = 0 AND A.EMP_ID = #{empId}
+	</select>
+	
+	
+	<!-- 프로젝트 팀원 제외 -->
+	<update id="deleteProjectTeam" parameterType="ProjectTeamVO">
+		UPDATE PROJECT_TEAM
+		SET
+		PRJT_TEAM_WDRW_DATE = #{prjtTeamWdrwDate,jdbcType=VARCHAR}
+		WHERE EMP_ID = #{empId,jdbcType=VARCHAR} AND PROJECT_ID = #{projectId,jdbcType=VARCHAR}
+	</update>
+	
+	
+
+
+	
+	<!-- 프로젝트 수정 -->
+	<update id="updateProjectBoard" parameterType="ProjectVO">
+		UPDATE PROJECT
+		SET
+		    PROJECT_NAME = #{projectName,jdbcType=VARCHAR},
+		    PROJECT_GOAL = #{projectGoal,jdbcType=VARCHAR},
+		    PROJECT_START_DATE = #{projectStartDate,jdbcType=VARCHAR},
+		    PROJECT_GOAL_DATE = #{projectGoalDate,jdbcType=VARCHAR}
+		    
+		WHERE
+		    EMP_ID = #{empId,jdbcType=VARCHAR} AND PROJECT_ID = #{projectId,jdbcType=VARCHAR}
+	</update>
+	
+	
+	
+	<!-- 프로젝트 완료 -->
+	<update id="completeProject" parameterType="int">
+		UPDATE PROJECT
+		SET
+		    ISUSE = 1
+		WHERE PROJECT_ID = #{projectId,jdbcType=VARCHAR}
+	</update>
+	
+	
+	
+	<!-- 프로젝트 삭제 -->
+	<update id="deleteProject" parameterType="ProjectVO">
+		UPDATE PROJECT
+		SET
+		    ISUSE = 99
+		WHERE PROJECT_ID = #{projectId,jdbcType=VARCHAR}
+	</update>
+	
+
+
+
+
+
+
+
+
+
+
+
+	<!-- 프로젝트 게시글 등록 -->
+	
+	<insert id="insertProjectPost" parameterType="PostVO">
+		INSERT INTO POST (
+		    POST_ID,
+		    POST_TITLE,
+		    POST_DATE,
+		    POST_ISOPEN,
+		    BOARD_ID,
+		    EMP_ID,
+		    POST_ASAP,
+		    POST_CONTENT,
+		    POST_SDAY,
+		    POST_FDAY,
+		    POST_PROGRESS
+		) VALUES (
+		    POST_SEQ.NEXTVAL,
+		   	#{postTitle},
+		    SYSDATE,
+		    0,
+		    #{boardId},
+		    #{empId},
+		    #{postAsap},
+		    #{postContent},
+		    #{postSday},
+		    #{postFday},
+		    #{postProgress}
+		)
+	</insert>
+	
+	
+	
+	<!-- 프로젝트 게시글 목록 -->
+	<select id="selectProjectPostList" parameterType="String" resultType="PostVO">
+		SELECT
+		    POST_ID,
+		    POST_TITLE,
+		    POST_DATE,
+		    EMP_ID,
+		    POST_ASAP,
+		    TO_CHAR(POST_SDAY,'YYYY-MM-DD') POST_SDAY,
+		    TO_CHAR(POST_FDAY,'YYYY-MM-DD') POST_FDAY,
+		    BOARD_ID
+		FROM POST
+		WHERE BOARD_ID = #{boardId} AND POST_ISOPEN = 0
+	</select>
+
+	
+	
+	<!-- 프로젝트 게시글 검색 -->
+	<select id="searchProjectPost" parameterType="string" resultType="PostVO">
+		SELECT *
+		FROM POST
+		WHERE POST_TITLE LIKE '%' || #{schWord} || '%' OR POST_CONTENT LIKE '%' ||
+		#{schWord} || '%' AND BOARD_ID = #{boardId}
+	</select>
+
+
+	
+	<!-- 프로젝트 게시글 조회 -->
+	<select id="selectProjectPost" parameterType="PostVO">
+		SELECT
+		    POST_ID,
+		    POST_TITLE,
+		    SUBSTR(POST_DATE,0,10) POST_DATE,
+		    ATCH_ID,
+		    BOARD_ID,
+		    EMP_ID,
+		    POST_CONTENT,
+		    POST_ASAP,
+			TO_CHAR(POST_SDAY,'YYYY-MM-DD') POST_SDAY,
+		    TO_CHAR(POST_FDAY,'YYYY-MM-DD') POST_FDAY,
+		    POST_PROGRESS
+		FROM
+		    POST
+		WHERE POST_ID = #{postId}
+	</select>	
+	
+	
+	
+	
+	<!-- 프로젝트 게시글 수정 -->
+	<update id="updateProjectPost" parameterType="PostVO">
+		UPDATE POST
+		SET
+		    POST_TITLE = #{postTitle,jdbcType=VARCHAR},
+		    POST_CONTENT= #{postContent,jdbcType=VARCHAR},
+		    POST_ASAP = #{postAsap,jdbcType=VARCHAR},
+		    POST_PROGRESS = #{postProgress,jdbcType=NUMERIC},
+		    POST_SDAY = #{postFday,jdbcType=VARCHAR},
+		    POST_FDAY = #{postSday,jdbcType=VARCHAR}
+		WHERE
+		    POST_ID = #{postId,jdbcType=VARCHAR}
+	</update>
+	
+	
+	
+	<!-- 프로젝트 게시글 삭제 -->
+	<update id="deleteProjectPost" parameterType="int">
+		UPDATE POST
+		SET
+		    POST_ISOPEN = 1
+		WHERE
+		    POST_ID = #{postId,jdbcType=VARCHAR}
+	</update>
+	
+	
+</mapper>

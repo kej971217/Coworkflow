@@ -1,0 +1,1222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mail.dao.MailDAO">
+    <!-- 구글 인가 서버로부터 토큰 발급이 처음이 아닌 경우 -->
+    <update id="updateEmployeeTokens"
+            parameterType="kr.or.ddit.mail.vo.MailClientVO">
+        UPDATE MAIL_CLIENT
+        SET
+            ACCESS_TOKEN = #{accessToken, jdbcType=VARCHAR}
+          , REFRESH_TOKEN = #{refreshToken, jdbcType=VARCHAR}
+          , EXPIRES_IN = #{expiresIn, jdbcType=NUMERIC}
+          , ACCESS_TOKEN_EXPIRES_AT = #{accessTokenExpiresAt, jdbcType=TIMESTAMP}
+          , REFRESH_TOKEN_EXPIRES_AT = #{refreshTokenExpiresAt,
+		jdbcType=TIMESTAMP}
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+    </update>
+
+    <delete id="deleteEmployeeTokens">
+        DELETE FROM MAIL_CLIENT
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+    </delete>
+
+    <!-- 직원 정보로부터 직원의 구글 계정(이메일)을 가져오기 -->
+    <select id="selectEmployeeEmailAddress" resultType="string"
+            parameterType="string">
+        SELECT INFO_EMAIL
+        FROM EMPLOYEE_INFO
+        WHERE EMP_ID = #{empId}
+    </select>
+
+
+    <!-- 해당 직원의 구글 계정(이메일)을 조건 값인 파라미터로 넣고, 토큰 및 토큰 관련 정보 가져오기 -->
+    <select id="selectAllAboutTokens"
+            resultType="kr.or.ddit.mail.vo.MailClientVO" parameterType="string">
+        SELECT ACCESS_TOKEN
+             , REFRESH_TOKEN
+             , EXPIRES_IN
+             , ACCESS_TOKEN_EXPIRES_AT
+             , REFRESH_TOKEN_EXPIRES_AT
+        FROM MAIL_CLIENT
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+    </select>
+
+    <!-- 해당 직원의 액세스 토큰 여부 확인 -->
+    <select id="selectAccessToken" resultType="int"
+            parameterType="string">
+        SELECT COUNT(ACCESS_TOKEN)
+        FROM MAIL_CLIENT
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+    </select>
+
+    <!-- 해당 직원의 리프레시 토큰 여부 확인 -->
+    <select id="selectRefreshToken" resultType="int" parameterType="string">
+        SELECT COUNT(REFRESH_TOKEN)
+        FROM MAIL_CLIENT
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+    </select>
+
+
+    <!-- 해당 직원의 구글 계정(이메일)을 조건 값인 파라미터로 넣고, 액세스 토큰 존재 여부 확인 -->
+    <select id="selectToCheckFirstAccess" parameterType="string"
+            resultType="int">
+        SELECT
+            COUNT(EMP_ID)
+        FROM
+            MAIL_CLIENT
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+    </select>
+    <!-- 직원 이름 가져오기 -->
+    <select id="selectEmployeeName" resultType="java.lang.String">
+        SELECT
+            EMP_NAME
+        FROM
+            EMPLOYEE
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectAllAboutRefreshToken"
+            resultType="kr.or.ddit.mail.vo.MailClientVO" parameterType="string">
+        SELECT REFRESH_TOKEN
+             , REFRESH_TOKEN_EXPIRES_AT
+        FROM MAIL_CLIENT
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+    </select>
+
+
+    <!-- MAIL_CLIENT에 해당 직원의 ID 및 토큰 정보를 최초로 등록하기 -->
+    <insert id="insertEmployeeTokens"
+            parameterType="kr.or.ddit.mail.vo.MailClientVO">
+        INSERT INTO MAIL_CLIENT ( EMP_ID
+                                , ACCESS_TOKEN
+                                , REFRESH_TOKEN
+                                , EXPIRES_IN
+                                , ACCESS_TOKEN_EXPIRES_AT
+                                , REFRESH_TOKEN_EXPIRES_AT)
+        VALUES ( #{empId, jdbcType=VARCHAR}
+               , #{accessToken, jdbcType=VARCHAR}
+               , #{refreshToken, jdbcType=VARCHAR}
+               , #{expiresIn, jdbcType=NUMERIC}
+               , #{accessTokenExpiresAt, jdbcType=TIMESTAMP}
+               , #{refreshTokenExpiresAt, jdbcType=TIMESTAMP})
+    </insert>
+    <insert id="insertMailNoneAttachment"
+            parameterType="kr.or.ddit.mail.vo.MailInboxVO">
+        INSERT INTO MAIL_INBOX (
+            MAIL_INDOX_ID
+            , MAIL_INBOX_TITLE,
+            MAIL_INBOX_CONTENT,
+            MAIL_INBOX_DATE,
+
+            SENDER,
+            RECEIVER_INFO,
+
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET)
+        VALUES (
+                       (SELECT NVL(MAX(MAIL_INDOX_ID), 0) + 1 FROM MAIL_INBOX)
+               , #{mailInboxTitle, jdbcType=VARCHAR}
+               , #{mailInboxContent, jdbcType=VARCHAR}
+               , #{mailInboxDate, jdbcType=TIMESTAMP}
+
+               , #{sender, jdbcType=VARCHAR}
+               , #{receiverInfo, jdbcType=VARCHAR}
+
+               , #{mailMessageId, jdbcType=VARCHAR}
+               , #{mailSnippet, jdbcType=VARCHAR}
+               )
+    </insert>
+    <insert id="insertMailWithAttachment"
+            parameterType="kr.or.ddit.mail.vo.MailSendVO">
+        INSERT INTO MAIL_INBOX (MAIL_INDOX_ID
+            ,MAIL_INBOX_TITLE,
+                                MAIL_INBOX_CONTENT,
+                                MAIL_INBOX_DATE,
+
+                                SENDER,
+                                RECEIVER_INFO,
+
+                                MAIL_MESSAGE_ID,
+                                MAIL_SNIPPET,
+
+                                MAIL_ATTACHMENT_ID,
+                                MAIL_ATTACHMENT_NAME,
+                                MAIL_ATTACHMENT_FILE,
+                                MAIL_ATTACHMENT_SIZE
+        )
+        VALUES (
+                       (SELECT NVL(MAX(MAIL_INDOX_ID), 0) + 1 FROM MAIL_INBOX)
+               , #{mailInboxTitle, jdbcType=VARCHAR}
+               , #{mailInboxContent, jdbcType=VARCHAR}
+               , #{mailInboxDate, jdbcType=TIMESTAMP}
+
+               , #{sender, jdbcType=VARCHAR}
+               , #{receiverInfo, jdbcType=VARCHAR}
+
+               , #{mailMessageId, jdbcType=VARCHAR}
+               , #{mailSnippet, jdbcType=VARCHAR}
+
+               , #{mailAttachmentId, jdbcType=VARCHAR}
+               , #{mailAttachmentName, jdbcType=VARCHAR}
+               , #{mailAttachmentFile, jdbcType=BLOB}
+               , #{mailAttachmentSize, jdbcType=NUMERIC}
+               )
+    </insert>
+
+
+    <!-- 특정 이메일 계정 구하기 -->
+    <sql id="emailFlag">
+
+    </sql>
+
+    <!-- 전체 사원 id, 사원명 구하기 -->
+    <select id="selectAllEmployeeInfo"
+            resultType="kr.or.ddit.mail.vo.MailSendVO">
+        SELECT
+            EMP_ID
+             , EMP_NAME
+        FROM
+            EMPLOYEE
+    </select>
+
+
+    <!-- 전체 본부 및 팀 id, 본부 및 팀 이름 구하기 -->
+    <select id="selectAllTeamInfo"
+            resultType="kr.or.ddit.mail.vo.MailSendVO">
+        SELECT TEAM_ID
+             , TEAM_NAME
+             , EMP_ID
+        FROM DEPARTMENT
+    </select>
+
+    <!-- 전체 프로젝트 id, 프로젝트명 구하기 -->
+    <select id="selectAllProjectInfo"
+            resultType="kr.or.ddit.mail.vo.MailSendVO">
+        SELECT
+            PROJECT_ID
+             , PROJECT_NAME
+             , EMP_ID
+        FROM PROJECT
+    </select>
+
+    <!-- 직원 조건, 이메일 주소 구하기 -->
+    <select id="selectEmailOfEmp" parameterType="string"
+            resultType="kr.or.ddit.mail.vo.MailSendVO">
+        SELECT
+            EMP_ID
+             , INFO_EMAIL
+        FROM EMPLOYEE_INFO
+        WHERE INFO_EMAIL IS NOT NULL
+          AND EMP_ID = #{empId, jdbcType=VARCHAR}
+    </select>
+
+    <!-- 직원 조건, 이메일 있는 팀 구하기 -->
+    <select id="selectEmailOfTeam"
+            resultType="kr.or.ddit.mail.vo.MailSendVO">
+        SELECT TEAM_ID
+             , TEAM_NAME
+             , BELONG_TEAM
+             , EMP_ID
+        FROM DEPARTMENT
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+    </select>
+
+    <!-- 직원 조건, 이메일 있는 프로젝트 구하기 -->
+    <select id="selectEmailOfProject"
+            resultType="kr.or.ddit.mail.vo.MailSendVO">
+        SELECT
+            PROJECT_ID
+             , PROJECT_NAME
+             , EMP_ID
+        FROM PROJECT
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectEmpEmails"
+            resultType="kr.or.ddit.mail.vo.MailSendVO">
+        SELECT
+            EMP_ID
+             , INFO_EMAIL
+        FROM EMPLOYEE_INFO
+        WHERE INFO_EMAIL IS NOT NULL
+    </select>
+
+
+    <!-- [뷰 용] 개별 이메일 조회 결과 -->
+    <resultMap id="empResultMap"
+               type="kr.or.ddit.mail.vo.MailSendVO">
+        <!-- <id> : 식별자 -->
+        <id property="empId" column="EMP_ID" />
+        <!-- <result> 일반 column -->
+        <result property="empName" column="EMP_NAME" />
+        <result property="infoEmail" column="INFO_EMAIL" />
+    </resultMap>
+
+    <!-- 이메일(INFO_EMAIL) 없으면 NULL로 채우지 않고 행으로 포함되지 않음 -->
+    <select id="selectEmpBeingEmail" resultMap="empResultMap">
+        SELECT
+            N.EMP_ID
+             , N.EMP_NAME
+             , E.INFO_EMAIL
+        FROM
+            EMPLOYEE N INNER JOIN EMPLOYEE_INFO E ON (N.EMP_ID = E.EMP_ID)
+        WHERE E.INFO_EMAIL IS NOT NULL
+        ORDER BY N.EMP_NAME ASC
+    </select>
+
+    <select id="selectMailNoneAttachment"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_INBOX_TITLE,
+            MAIL_INBOX_CONTENT,
+            MAIL_INBOX_DATE,
+
+            SENDER,
+            RECEIVER_INFO,
+
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET
+        FROM
+            MAIL_INBOX
+        WHERE
+            MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+          AND RECEIVER_INFO = #{empId, jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectMailWithAttachment"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_INBOX_TITLE,
+            MAIL_INBOX_CONTENT,
+            MAIL_INBOX_DATE,
+
+            SENDER,
+            RECEIVER_INFO,
+
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_INBOX
+        WHERE
+            MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+          AND RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+    </select>
+    <select id="selectMessageIdList"
+            parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT
+            MAIL_MESSAGE_ID
+        FROM
+            MAIL_INBOX
+        WHERE
+            RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+    </select>
+
+    <insert id="insertAttachmentFile"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        <![CDATA[
+        IF EXISTS (
+                SELECT COUNT(MAIL_INDOX_ID)
+                FROM MAIL_INBOX
+                WHERE MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+        AND RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+        AND MAIL_ATTACHMENT_ID = #{mailAttachmentId, jdbcType=VARCHAR}
+        )
+        BEGIN
+        INSERT INTO MAIL_INBOX (
+            MAIL_ATTACHMENT_FILE
+        ) VALUES (
+                     #{mailAttachmentFile, jdbcType=BLOB}
+                 )
+        END
+        ]]>
+	</insert>
+    <insert id="insertJustEmail"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        INSERT INTO MAIL_INBOX (
+            MAIL_INDOX_ID,
+            MAIL_INBOX_TITLE,
+            MAIL_INBOX_CONTENT,
+            MAIL_INBOX_DATE,
+
+            SENDER,
+            RECEIVER_INFO,
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        ) VALUES (
+                         (SELECT NVL(MAX(MAIL_INDOX_ID), 0) + 1 FROM MAIL_INBOX)
+                 , #{mailInboxTitle,jdbcType=VARCHAR}
+                 , #{mailInboxContent,jdbcType=VARCHAR}
+                 , #{mailInboxDate,jdbcType=DATE}
+
+                 , #{sender,jdbcType=VARCHAR}
+                 , #{receiverInfo,jdbcType=VARCHAR}
+                 , #{mailMessageId,jdbcType=VARCHAR}
+                 , #{mailSnippet,jdbcType=VARCHAR}
+
+                 , #{mailAttachmentId,jdbcType=VARCHAR}
+                 , #{mailAttachmentName,jdbcType=VARCHAR}
+                 , #{mailAttachmentFile, jdbcType=BLOB}
+                 , #{mailAttachmentSize,jdbcType=NUMERIC}
+                 , #{mailAttachmentMimeType,jdbcType=VARCHAR}
+                 )
+    </insert>
+
+
+    <select id="selectEmalsList"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO" parameterType="string">
+        SELECT
+            MAIL_INBOX_TITLE,
+            MAIL_INBOX_CONTENT,
+            MAIL_INBOX_DATE,
+
+            SENDER,
+            RECEIVER_INFO,
+
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_INBOX
+        WHERE
+            RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+    </select>
+    <select id="selectCountOneWithAttach" resultType="int"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            COUNT(MAIL_INBOX_TITLE)
+        FROM
+            MAIL_INBOX
+        WHERE
+            RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+          AND MAIL_ATTACHMENT_ID = #{mailAttachmentId,jdbcType=VARCHAR}
+    </select>
+    <select id="selectOneWithAttach"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_INBOX_TITLE,
+            MAIL_INBOX_CONTENT,
+            MAIL_INBOX_DATE,
+
+            SENDER,
+            RECEIVER_INFO,
+
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_INBOX
+        WHERE
+            RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+          AND MAIL_ATTACHMENT_ID = #{mailAttachmentId,jdbcType=VARCHAR}
+    </select>
+    <select id="selectEmailTotalCountDB"
+            resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            COUNT(MAIL_MESSAGE_ID)
+        FROM
+            MAIL_INBOX
+        WHERE
+            RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectOne" resultType="kr.or.ddit.mail.vo.MailBoxVO"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_INBOX_TITLE,
+            MAIL_INBOX_CONTENT,
+            MAIL_INBOX_DATE,
+
+            SENDER,
+            RECEIVER_INFO,
+
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_INBOX
+        WHERE
+            RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+        ORDER BY MAIL_INBOX_DATE DESC
+    </select>
+    <select id="selectCntNullForDel" resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            COUNT(MAIL_MESSAGE_ID)
+        FROM
+            MAIL_INBOX
+        WHERE
+            RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectMessageIdFromDB"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO" parameterType="string">
+        SELECT
+            MAIL_MESSAGE_ID
+        FROM
+            MAIL_INBOX
+        WHERE
+            RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+        GROUP BY MAIL_MESSAGE_ID
+        ORDER BY MAX(MAIL_INBOX_DATE) DESC
+    </select>
+    <select id="selectViewFromDB"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_INBOX_TITLE,
+            MAIL_INBOX_CONTENT,
+            MAIL_INBOX_DATE,
+
+            SENDER,
+            RECEIVER_INFO,
+
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME
+        FROM
+            MAIL_INBOX
+        WHERE
+            RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+        ORDER BY MAIL_INBOX_DATE DESC
+
+    </select>
+
+    <select id="selectCntSentMail" resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            COUNT(MAIL_MESSAGE_ID)
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectCntWithAttachSent" resultType="int"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            COUNT(MAIL_SEND_TITLE)
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+          AND MAIL_ATTACHMENT_ID = #{mailAttachmentId,jdbcType=VARCHAR}
+    </select>
+    <select id="selectDownloadInbox" resultType="kr.or.ddit.mail.vo.MailBoxVO" parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_INBOX
+        WHERE
+            MAIL_ATTACHMENT_ID = #{mailAttachmentId, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+
+
+    <update id="updateAttachmentFileBytes"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        UPDATE MAIL_INBOX
+        SET
+            MAIL_ATTACHMENT_FILE = #{mailAttachmentFile, jdbcType=BLOB}
+        WHERE
+            RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+          AND MAIL_ATTACHMENT_ID = #{mailAttachmentId,jdbcType=VARCHAR}
+    </update>
+
+    <!-- 보낸 메일함 시작 -->
+    <insert id="insertJustEmailSent"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        INSERT INTO MAIL_SEND (
+            MAIL_SEND_ID,
+            MAIL_SEND_TITLE,
+            MAIL_SEND_CONTENT,
+            MAIL_SEND_DATE,
+
+            MAIL_SEND_RECEIVER,
+            MAIL_SEND_SENDER,
+            EMP_ID,
+            ISSEND,
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        ) VALUES (
+                         (SELECT NVL(MAX(MAIL_SEND_ID), 0) + 1 FROM MAIL_SEND)
+                 , #{mailSendTitle,jdbcType=VARCHAR}
+                 , #{mailSendContent,jdbcType=VARCHAR}
+                 , #{mailSendDate,jdbcType=DATE}
+
+                 , #{mailSendReceiver,jdbcType=VARCHAR}
+                 , #{mailSendSender, jdbcType=VARCHAR}
+                 , #{empId,jdbcType=VARCHAR}
+                 , 1
+                 , #{mailMessageId,jdbcType=VARCHAR}
+                 , #{mailSnippet,jdbcType=VARCHAR}
+
+                 , #{mailAttachmentId,jdbcType=VARCHAR}
+                 , #{mailAttachmentName,jdbcType=VARCHAR}
+                 , #{mailAttachmentFile, jdbcType=BLOB}
+                 , #{mailAttachmentSize,jdbcType=NUMERIC}
+                 , #{mailAttachmentMimeType,jdbcType=VARCHAR}
+                 )
+    </insert>
+    <select id="selectViewFromDBSent"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_SEND_TITLE,
+            MAIL_SEND_CONTENT,
+            MAIL_SEND_DATE,
+
+            MAIL_SEND_RECEIVER,
+            MAIL_SEND_SENDER,
+            EMP_ID,
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{receiverInfo, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+          AND ISSEND = 1
+        ORDER BY MAIL_SEND_DATE DESC
+    </select>
+    <select id="selectMessageIdFromDBSent"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO" parameterType="string">
+        SELECT
+            MAIL_MESSAGE_ID
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND ISSEND = 1
+        GROUP BY MAIL_MESSAGE_ID
+        ORDER BY MAX(MAIL_SEND_DATE) DESC
+    </select>
+    <select id="selectViewDetailSent" resultType="kr.or.ddit.mail.vo.MailBoxVO" parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_SEND_TITLE,
+            MAIL_SEND_CONTENT,
+            MAIL_SEND_DATE,
+
+            MAIL_SEND_RECEIVER,
+            MAIL_SEND_SENDER,
+            EMP_ID,
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{receiverInfo, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+          AND ISSEND = 1
+        ORDER BY MAIL_SEND_DATE DESC
+    </select>
+    <select id="selectDownloadSent" resultType="kr.or.ddit.mail.vo.MailBoxVO" parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_SEND
+        WHERE
+            MAIL_ATTACHMENT_ID = #{mailAttachmentId, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+    <!-- 보낸 메일함 종료 -->
+    <!-- 임시 보관함 시작 -->
+    <insert id="insertJustEmailDraft"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        INSERT INTO MAIL_SEND (
+            MAIL_SEND_ID,
+            MAIL_SEND_TITLE,
+            MAIL_SEND_CONTENT,
+            MAIL_SEND_DATE,
+
+            MAIL_SEND_RECEIVER,
+            MAIL_SEND_SENDER,
+            EMP_ID,
+            ISSEND,
+            MAIL_DRAFT_ID,
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        ) VALUES (
+                         (SELECT NVL(MAX(MAIL_SEND_ID), 0) + 1 FROM MAIL_SEND)
+                 , #{mailSendTitle,jdbcType=VARCHAR}
+                 , #{mailSendContent,jdbcType=VARCHAR}
+                 , #{mailSendDate,jdbcType=DATE}
+
+                 , #{mailSendReceiver,jdbcType=VARCHAR}
+                 , #{mailSendSender, jdbcType=VARCHAR}
+                 , #{empId,jdbcType=VARCHAR}
+                 , 0
+                 , #{mailDraftId,jdbcType=VARCHAR}
+                 , #{mailMessageId,jdbcType=VARCHAR}
+                 , #{mailSnippet,jdbcType=VARCHAR}
+
+                 , #{mailAttachmentId,jdbcType=VARCHAR}
+                 , #{mailAttachmentName,jdbcType=VARCHAR}
+                 , #{mailAttachmentFile, jdbcType=BLOB}
+                 , #{mailAttachmentSize,jdbcType=NUMERIC}
+                 , #{mailAttachmentMimeType,jdbcType=VARCHAR}
+                 )
+    </insert>
+
+    <!-- 메일 전송 시, 이전에 저장한 임시보관용 메일 삭제 -->
+    <delete id="deleteDraftAttach"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        DELETE FROM MAIL_SEND
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+          AND MAIL_DRAFT_ID = #{mailDraftId,jdbcType=VARCHAR}
+          AND MAIL_ATTACHMENT_ID = #{mailAttachmentId,jdbcType=VARCHAR}
+    </delete>
+    <delete id="deleteDraft"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        DELETE FROM MAIL_SEND
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+          AND MAIL_DRAFT_ID = #{mailDraftId,jdbcType=VARCHAR}
+    </delete>
+
+    <select id="selectCntDraft" resultType="int"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            COUNT(MAIL_SEND_TITLE)
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_DRAFT_ID = #{mailDraftId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+          AND MAIL_ATTACHMENT_ID = #{mailAttachmentId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectDraftIdBeingDraft"
+            resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            COUNT(MAIL_DRAFT_ID)
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+          AND MAIL_DRAFT_ID = #{mailDraftId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectMessageIdBeingDraft"
+            resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            COUNT(MAIL_MESSAGE_ID)
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+          AND MAIL_MESSAGE_ID = #{mailMessageId,jdbcType=VARCHAR}
+          AND MAIL_DRAFT_ID = #{mailDraftId, jdbcType=VARCHAR}
+          AND MAIL_ATTACHMENT_ID = #{mailAttachmentId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectDraftId"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO" parameterType="string">
+        SELECT
+            MAIL_DRAFT_ID
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+        GROUP BY MAIL_DRAFT_ID
+        ORDER BY MAX(MAIL_SEND_DATE) DESC
+    </select>
+    <select id="selectMessageIdDraft"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO" parameterType="string">
+        SELECT
+            MAIL_MESSAGE_ID
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+        GROUP BY MAIL_MESSAGE_ID
+        ORDER BY MAX(MAIL_SEND_DATE) DESC
+    </select>
+    <select id="selectViewFromDBDraft"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_SEND_TITLE,
+            MAIL_SEND_CONTENT,
+            MAIL_SEND_DATE,
+
+            MAIL_SEND_RECEIVER,
+            MAIL_SEND_SENDER,
+            EMP_ID,
+            ISSEND,
+            MAIL_DRAFT_ID,
+            MAIL_SNIPPET,
+
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_DRAFT_ID = #{mailDraftId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+        ORDER BY MAIL_SEND_DATE DESC
+    </select>
+
+    <select id="selectADraftFromDB"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_SEND_TITLE,
+            MAIL_SEND_CONTENT,
+            MAIL_SEND_DATE,
+
+            MAIL_SEND_RECEIVER,
+            MAIL_SEND_SENDER,
+            EMP_ID,
+            ISSEND,
+            MAIL_DRAFT_ID,
+            MAIL_SNIPPET,
+
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_DRAFT_ID = #{mailDraftId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+    </select>
+    <!-- 임시 보관함 종료 -->
+    <!-- 휴지통 시작 -->
+    <delete id="deleteInboxBeforeTrashDB"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        DELETE FROM MAIL_INBOX
+        WHERE RECEIVER_INFO = #{receiverInfo, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </delete>
+    <delete id="deleteSentBeforeTrashDB"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        DELETE FROM MAIL_SEND
+        WHERE EMP_ID = #{empId,jdbcType=VARCHAR}
+          AND ISSEND = 1
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </delete>
+    <delete id="deleteDraftBeforeTrashDB"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        DELETE FROM MAIL_SEND
+        WHERE EMP_ID = #{empId,jdbcType=VARCHAR}
+          AND ISSEND = 0
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </delete>
+    <insert id="insertTrashFromInbox">
+        INSERT INTO MAIL_TRASH (MAIL_TRASH_ID,
+                                EMP_ID,
+                                MAIL_INBOX,
+                                MAIL_SEND,
+                                MAIL_DRAFT,
+                                MAIL_MESSAGE_ID,
+                                MAIL_DATE,
+                                MAIL_TRASH_FROM,
+                                MAIL_TRASH_TO,
+                                MAIL_TRASH_SNIPPET,
+                                MAIL_TRASH_SUBJECT,
+                                MAIL_TRASH_TITLE,
+                                MAIL_TRASH_CONTENT,
+                                MAIL_ATTACHMENT_ID,
+                                MAIL_ATTACHMENT_NAME,
+                                MAIL_ATTACHMENT_MIME_TYPE,
+                                MAIL_ATTACHMENT_SIZE,
+                                MAIL_ATTACHMENT
+        )VALUES (
+                        (SELECT NVL(MAX(MAIL_TRASH_ID), 0) + 1 FROM MAIL_TRASH)
+                , #{empId, jdbcType=VARCHAR}
+                , 1
+                , 0
+                , 0
+                , #{mailMessageId, jdbcType=VARCHAR}
+                , #{mailDate, jdbcType=TIMESTAMP}
+                , #{mailTrashFrom, jdbcType=VARCHAR}
+                , #{mailTrashTo, jdbcType=VARCHAR}
+                , #{mailTrashSnippet, jdbcType=VARCHAR}
+                , #{mailTrashSubject, jdbcType=VARCHAR}
+                , #{mailTrashTitle, jdbcType=VARCHAR}
+                , #{mailTrashContent, jdbcType=VARCHAR}
+                , #{mailAttachmentId, jdbcType=VARCHAR}
+                , #{mailAttachmentName, jdbcType=VARCHAR}
+                , #{mailAttachmentMimeType, jdbcType=VARCHAR}
+                , #{mailAttachmentSize, jdbcType=NUMERIC}
+                , #{MailAttachment, jdbcType=BLOB}
+                )
+    </insert>
+    <insert id="insertTrashFromSent"
+            parameterType="kr.or.ddit.mail.vo.MailTrashVO">
+        INSERT INTO MAIL_TRASH (MAIL_TRASH_ID,
+                                EMP_ID,
+                                MAIL_INBOX,
+                                MAIL_SEND,
+                                MAIL_DRAFT,
+                                MAIL_MESSAGE_ID,
+                                MAIL_DATE,
+                                MAIL_TRASH_FROM,
+                                MAIL_TRASH_TO,
+                                MAIL_TRASH_SNIPPET,
+                                MAIL_TRASH_SUBJECT,
+                                MAIL_TRASH_TITLE,
+                                MAIL_TRASH_CONTENT,
+                                MAIL_ATTACHMENT_ID,
+                                MAIL_ATTACHMENT_NAME,
+                                MAIL_ATTACHMENT_MIME_TYPE,
+                                MAIL_ATTACHMENT_SIZE,
+                                MAIL_ATTACHMENT
+        )VALUES (
+                        (SELECT NVL(MAX(MAIL_TRASH_ID), 0) + 1 FROM MAIL_TRASH)
+                , #{empId, jdbcType=VARCHAR}
+                , 0
+                , 1
+                , 0
+                , #{mailMessageId, jdbcType=VARCHAR}
+                , #{mailDate, jdbcType=TIMESTAMP}
+                , #{mailTrashFrom, jdbcType=VARCHAR}
+                , #{mailTrashTo, jdbcType=VARCHAR}
+                , #{mailTrashSnippet, jdbcType=VARCHAR}
+                , #{mailTrashSubject, jdbcType=VARCHAR}
+                , #{mailTrashTitle, jdbcType=VARCHAR}
+                , #{mailTrashContent, jdbcType=VARCHAR}
+                , #{mailAttachmentId, jdbcType=VARCHAR}
+                , #{mailAttachmentName, jdbcType=VARCHAR}
+                , #{mailAttachmentMimeType, jdbcType=VARCHAR}
+                , #{mailAttachmentSize, jdbcType=NUMERIC}
+                , #{MailAttachment, jdbcType=BLOB}
+                )
+    </insert>
+    <insert id="insertTrashFromDraft"
+            parameterType="kr.or.ddit.mail.vo.MailTrashVO">
+        INSERT INTO MAIL_TRASH (MAIL_TRASH_ID,
+                                EMP_ID,
+                                MAIL_INBOX,
+                                MAIL_SEND,
+                                MAIL_DRAFT,
+                                MAIL_MESSAGE_ID,
+                                MAIL_DATE,
+                                MAIL_TRASH_FROM,
+                                MAIL_TRASH_TO,
+                                MAIL_TRASH_SNIPPET,
+                                MAIL_TRASH_SUBJECT,
+                                MAIL_TRASH_TITLE,
+                                MAIL_TRASH_CONTENT,
+                                MAIL_ATTACHMENT_ID,
+                                MAIL_ATTACHMENT_NAME,
+                                MAIL_ATTACHMENT_MIME_TYPE,
+                                MAIL_ATTACHMENT_SIZE,
+                                MAIL_ATTACHMENT
+        )VALUES (
+                        (SELECT NVL(MAX(MAIL_TRASH_ID), 0) + 1 FROM MAIL_TRASH)
+                , #{empId, jdbcType=VARCHAR}
+                , 0
+                , 0
+                , 1
+                , #{mailMessageId, jdbcType=VARCHAR}
+                , #{mailDate, jdbcType=TIMESTAMP}
+                , #{mailTrashFrom, jdbcType=VARCHAR}
+                , #{mailTrashTo, jdbcType=VARCHAR}
+                , #{mailTrashSnippet, jdbcType=VARCHAR}
+                , #{mailTrashSubject, jdbcType=VARCHAR}
+                , #{mailTrashTitle, jdbcType=VARCHAR}
+                , #{mailTrashContent, jdbcType=VARCHAR}
+                , #{mailAttachmentId, jdbcType=VARCHAR}
+                , #{mailAttachmentName, jdbcType=VARCHAR}
+                , #{mailAttachmentMimeType, jdbcType=VARCHAR}
+                , #{mailAttachmentSize, jdbcType=NUMERIC}
+                , #{MailAttachment, jdbcType=BLOB}
+                )
+    </insert>
+    <insert id="insertTrash"
+            parameterType="kr.or.ddit.mail.vo.MailTrashVO">
+        INSERT INTO MAIL_TRASH (MAIL_TRASH_ID,
+                                EMP_ID,
+                                MAIL_MESSAGE_ID,
+                                MAIL_DATE,
+                                MAIL_TRASH_FROM,
+                                MAIL_TRASH_TO,
+                                MAIL_TRASH_SNIPPET,
+                                MAIL_TRASH_SUBJECT,
+                                MAIL_TRASH_TITLE,
+                                MAIL_TRASH_CONTENT,
+                                MAIL_ATTACHMENT_ID,
+                                MAIL_ATTACHMENT_NAME,
+                                MAIL_ATTACHMENT_MIME_TYPE,
+                                MAIL_ATTACHMENT_SIZE,
+                                MAIL_ATTACHMENT
+        )VALUES (
+                        (SELECT NVL(MAX(MAIL_TRASH_ID), 0) + 1 FROM MAIL_TRASH)
+                , #{empId, jdbcType=VARCHAR}
+                , #{mailMessageId, jdbcType=VARCHAR}
+                , #{mailDate, jdbcType=TIMESTAMP}
+                , #{mailTrashFrom, jdbcType=VARCHAR}
+                , #{mailTrashTo, jdbcType=VARCHAR}
+                , #{mailTrashSnippet, jdbcType=VARCHAR}
+                , #{mailTrashSubject, jdbcType=VARCHAR}
+                , #{mailTrashTitle, jdbcType=VARCHAR}
+                , #{mailTrashContent, jdbcType=VARCHAR}
+                , #{mailAttachmentId, jdbcType=VARCHAR}
+                , #{mailAttachmentName, jdbcType=VARCHAR}
+                , #{mailAttachmentMimeType, jdbcType=VARCHAR}
+                , #{mailAttachmentSize, jdbcType=NUMERIC}
+                , #{MailAttachment, jdbcType=BLOB}
+                )
+    </insert>
+
+    <select id="selectSentBeing" resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            COUNT(MAIL_MESSAGE_ID)
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND ISSEND = 1
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectDraftBeing" resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            COUNT(MAIL_DRAFT_ID)
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectSentBeforeTrashDB"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_SEND_TITLE,
+            MAIL_SEND_CONTENT,
+            MAIL_SEND_DATE,
+
+            MAIL_SEND_RECEIVER,
+            MAIL_SEND_SENDER,
+            EMP_ID,
+            ISSEND,
+            MAIL_DRAFT_ID,
+            MAIL_MESSAGE_ID,
+            MAIL_SNIPPET,
+
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+          AND ISSEND = 1
+    </select>
+    <select id="selectDraftBeforeTrashDB"
+            resultType="kr.or.ddit.mail.vo.MailBoxVO"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT MAIL_SEND_TITLE,
+               MAIL_SEND_CONTENT,
+               MAIL_SEND_DATE,
+
+               MAIL_SEND_RECEIVER,
+               MAIL_SEND_SENDER,
+               EMP_ID,
+               ISSEND,
+               MAIL_DRAFT_ID,
+               MAIL_SNIPPET,
+
+               MAIL_ATTACHMENT_ID,
+               MAIL_ATTACHMENT_NAME,
+               MAIL_ATTACHMENT_FILE,
+               MAIL_ATTACHMENT_SIZE,
+               MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_SEND
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+          AND ISSEND = 0
+    </select>
+    <select id="selectTrashList"
+            resultType="kr.or.ddit.mail.vo.MailTrashVO"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT EMP_ID,
+               MAIL_INBOX,
+               MAIL_SEND,
+               MAIL_DRAFT,
+               MAIL_MESSAGE_ID,
+               MAIL_DATE,
+               MAIL_TRASH_FROM,
+               MAIL_TRASH_TO,
+               MAIL_TRASH_SNIPPET,
+               MAIL_TRASH_SUBJECT,
+               MAIL_TRASH_CONTENT,
+               MAIL_ATTACHMENT_ID,
+               MAIL_ATTACHMENT_NAME,
+               MAIL_ATTACHMENT_MIME_TYPE,
+               MAIL_ATTACHMENT_SIZE,
+               MAIL_ATTACHMENT
+        FROM MAIL_TRASH
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectViewFromDBTrash"
+            resultType="kr.or.ddit.mail.vo.MailTrashVO"
+            parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT EMP_ID,
+               MAIL_MESSAGE_ID,
+               MAIL_DATE,
+               MAIL_TRASH_FROM,
+               MAIL_TRASH_TO,
+               MAIL_TRASH_SNIPPET
+        FROM MAIL_TRASH
+        WHERE EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectTrashIdListFromDB"
+            resultType="kr.or.ddit.mail.vo.MailTrashVO" parameterType="string">
+        SELECT
+            MAIL_MESSAGE_ID
+        FROM
+            MAIL_TRASH
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+        GROUP BY MAIL_MESSAGE_ID
+        ORDER BY MAX(MAIL_DATE) DESC
+    </select>
+    <select id="selectCountTrashBeingInbox"
+            resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailTrashVO">
+        SELECT
+            COUNT(MAIL_MESSAGE_ID)
+        FROM
+            MAIL_TRASH
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_INBOX = 1
+        GROUP BY MAIL_MESSAGE_ID
+        ORDER BY MAX(MAIL_DATE) DESC
+    </select>
+    <select id="selectCountTrashBeingSent"
+            resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailTrashVO">
+        SELECT
+            COUNT(MAIL_MESSAGE_ID)
+        FROM
+            MAIL_TRASH
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_SEND = 1
+        GROUP BY MAIL_MESSAGE_ID
+        ORDER BY MAX(MAIL_DATE) DESC
+    </select>
+    <select id="selectCountTrashBeingDraft"
+            resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailTrashVO">
+        SELECT
+            COUNT(MAIL_MESSAGE_ID)
+        FROM
+            MAIL_TRASH
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+          AND MAIL_DRAFT = 1
+        GROUP BY MAIL_MESSAGE_ID
+        ORDER BY MAX(MAIL_DATE) DESC
+    </select>
+    <select id="selectCountTrashBeing"
+            resultType="java.lang.Integer"
+            parameterType="kr.or.ddit.mail.vo.MailTrashVO">
+        SELECT
+            COUNT(MAIL_MESSAGE_ID)
+        FROM
+            MAIL_TRASH
+        WHERE
+            EMP_ID = #{empId, jdbcType=VARCHAR}
+        AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+    <select id="selectDownloadTrash" resultType="kr.or.ddit.mail.vo.MailBoxVO" parameterType="kr.or.ddit.mail.vo.MailBoxVO">
+        SELECT
+            MAIL_ATTACHMENT_ID,
+            MAIL_ATTACHMENT_NAME,
+            MAIL_ATTACHMENT_FILE,
+            MAIL_ATTACHMENT_SIZE,
+            MAIL_ATTACHMENT_MIME_TYPE
+        FROM
+            MAIL_SEND
+        WHERE
+            MAIL_ATTACHMENT_ID = #{mailAttachmentId, jdbcType=VARCHAR}
+          AND MAIL_MESSAGE_ID = #{mailMessageId, jdbcType=VARCHAR}
+    </select>
+
+    <!-- 휴지통 종료 -->
+
+</mapper>

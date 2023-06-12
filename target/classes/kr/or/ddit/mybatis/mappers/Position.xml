@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.employee.dao.PositionDAO">
+
+
+	<select id="selectPostionVO" parameterType="OrganizationInfoVO" resultType="PositionVO">
+		SELECT
+	   
+	     A.POSITION_ID
+	    
+	    , B.TEAM_ID
+	    , B.TEAM_NAME
+	    , (SELECT COMM_NAME FROM COMM WHERE COMM_ID=A.POSITION_ID) AS POSITION_NAME
+	FROM 
+	    ORGANIZATION_INFO A RIGHT OUTER JOIN DEPARTMENT B ON (A.TEAM_ID = B.TEAM_ID)
+	WHERE	
+	        A.EMP_ID = #{empId}
+	        AND A.POSITION_ID = #{positionId}
+	        AND A.TEAM_ID = #{teamId}
+	
+	</select>
+
+
+
+</mapper>

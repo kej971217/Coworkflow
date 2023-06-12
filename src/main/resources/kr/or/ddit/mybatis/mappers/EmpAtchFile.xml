@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mypage.dao.EmpAtchFileDAO">
+
+	<select id="selectAttatchList" parameterType="int" resultType="EmpAtchFileVO">
+		SELECT
+		    emp_atch_id,
+		    emp_atch_clasfct,
+		    emp_atch_mime,
+		    emp_atch_origin_name,
+		    emp_atch_save_name,
+		    emp_atch_size,
+		    emp_atch_save_date,
+		    emp_atch_root
+		FROM
+		    emp_atch_file
+		WHERE EMP_ATCH_ID = #{empAtchId,jdbcType=VARCHAR}		
+	</select>
+
+	<select id="selectAttatch" parameterType="EmpAtchFileVO" resultType="EmpAtchFileVO">
+		SELECT
+		    emp_atch_id,
+		    emp_atch_clasfct,
+		    emp_atch_mime,
+		    emp_atch_origin_name,
+		    emp_atch_save_name,
+		    emp_atch_size,
+		    emp_atch_save_date,
+		    emp_atch_root
+		FROM
+		    emp_atch_file
+		WHERE emp_atch_id = #{empAtchId,jdbcType=VARCHAR} AND emp_atch_clasfct = #{empAtchClasfct,jdbcType=NUMERIC}
+	</select>
+	
+	<update id="deleteAttatch" parameterType="EmpAtchFileVO">
+			UPDATE emp_atch_file
+			   SET emp_atch_mime = null,
+				   emp_atch_origin_name = null,
+				   emp_atch_save_name = null,
+				   emp_atch_size = null,
+				   emp_atch_save_date = null,
+				   emp_atch_root = null
+			 WHERE emp_atch_id = #{empAtchId,jdbcType=VARCHAR} AND emp_atch_clasfct = #{empAtchClasfct,jdbcType=NUMERIC}
+	</update>
+
+	<insert id="insertAttatchFile" parameterType="EmpAtchFileVO">
+			INSERT INTO emp_atch_file(
+				emp_atch_id,
+			    emp_atch_clasfct,
+			    emp_atch_mime,
+			    emp_atch_origin_name,
+			    emp_atch_save_name,
+			    emp_atch_size,
+			    emp_atch_save_date,
+			    emp_atch_root
+			)VALUES(
+				EMP_ATCH_SEQ.nextval,
+			    #{empAtchClasfct,jdbcType=NUMERIC},
+			    #{empAtchMime,jdbcType=VARCHAR},
+			    #{empAtchOriginName,jdbcType=VARCHAR},
+			    #{empAtchSaveName,jdbcType=VARCHAR},
+			    #{empAtchSize,jdbcType=VARCHAR},
+			    sysdate,
+			    #{empAtchRoot,jdbcType=VARCHAR}
+			)
+	<selectKey resultType="int" keyProperty="empAtchId"  order="AFTER">
+    	SELECT EMP_ATCH_SEQ.CURRVAL From dual
+    </selectKey>
+	</insert>
+	
+		<insert id="insertAddAtchFile" parameterType="EmpAtchFileVO">
+			INSERT INTO emp_atch_file(
+				emp_atch_id,
+			    emp_atch_clasfct,
+			    emp_atch_mime,
+			    emp_atch_origin_name,
+			    emp_atch_save_name,
+			    emp_atch_size,
+			    emp_atch_save_date,
+			    emp_atch_root
+			)VALUES(
+				#{empAtchId,jdbcType=NUMERIC},
+			    #{empAtchClasfct,jdbcType=NUMERIC},
+			    #{empAtchMime,jdbcType=VARCHAR},
+			    #{empAtchOriginName,jdbcType=VARCHAR},
+			    #{empAtchSaveName,jdbcType=VARCHAR},
+			    #{empAtchSize,jdbcType=VARCHAR},
+			    sysdate,
+			    #{empAtchRoot,jdbcType=VARCHAR}
+			)
+	</insert>
+	
+	<update id="updateAttatchFile" parameterType="EmpAtchFileVO">
+		UPDATE emp_atch_file
+			SET
+			    emp_atch_mime = #{empAtchMime,jdbcType=VARCHAR},
+			    emp_atch_origin_name = #{empAtchOriginName,jdbcType=VARCHAR},
+			    emp_atch_save_name = #{empAtchSaveName,jdbcType=VARCHAR},
+			    emp_atch_size = #{empAtchSize,jdbcType=VARCHAR},
+			    emp_atch_save_date = sysdate,
+			    emp_atch_root = #{empAtchRoot,jdbcType=VARCHAR}      
+			WHERE
+				 emp_atch_id = #{empAtchId,jdbcType=NUMERIC} AND emp_atch_clasfct = #{empAtchClasfct,jdbcType=NUMERIC}
+	</update>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

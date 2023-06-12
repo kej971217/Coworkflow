@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.employeeInfo.dao.EmployeeInfoDAO">
+
+	<select id="selectEmpInfo" parameterType="string" resultType="EmployeeInfoVO">
+		SELECT
+		    EMP_INFO_ID,
+		    EMP_ID,
+		    INFO_HP,
+		    INFO_EMAIL,
+		    INFO_ADDR,
+		    COM_TEL,
+		    INFO_ADDRDETAIL
+		FROM
+		    EMPLOYEE_INFO
+		WHERE EMP_ID = #{empId,jdbcType=VARCHAR}     
+	</select>
+	
+	
+</mapper>

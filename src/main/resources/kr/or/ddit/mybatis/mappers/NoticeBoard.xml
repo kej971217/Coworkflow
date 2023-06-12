@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.board.notice.dao.NoticeBoardDAO">
+	<sql id="searchFrag">
+		<where>
+			<if
+				test="simpleCondition neq null and @org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+				<!-- 제목이랑 내용 검색 -->
+				INSTR(POST_TITLE, #{simpleCondition.searchWord}) > 0
+				OR
+				INSTR(POST_CONTENT, #{simpleCondition.searchWord}) > 0
+			</if>
+		</where>
+	</sql>
+
+
+
+	<!-- 공지사항 조회 -->
+	<resultMap id="boardMap" type="BoardVO" autoMapping="true">
+		<id property="boardId" column="BOARD_ID" />
+		<collection property="postList" ofType="PostVO"
+			autoMapping="true" />
+	</resultMap>
+	<select id="selectNoticeBoardList" parameterType="Pagination"
+		resultMap="boardMap">
+		SELECT A.BOARD_ID,
+			A.BOARD_NAME,
+			A.BOARD_OPEN_DATE,
+			A.BOARD_CLOSE_DATE,
+			A.ISUSE,
+			A.BOARD_CLASSIFICATION,
+			A.TEAM_ID,
+			B.POST_ID,
+			B.POST_TITLE,
+			B.POST_CNT,
+			TO_CHAR(B.POST_DATE,'YYYY-MM-DD') AS POST_DATE,
+			B.POST_ISOPEN,
+			B.ATCH_ID,
+			B.BOARD_ID,
+			B.EMP_ID,
+			B.POST_CONTENT,
+			(SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = B.EMP_ID) EMP_NAME 
+		FROM BOARD A
+		JOIN POST B
+			ON A.BOARD_ID = B.BOARD_ID
+		WHERE
+			A.BOARD_CLASSIFICATION = 'C001'
+		AND B.POST_ISOPEN=0
+			ORDER BY POST_ID DESC  
+	</select>
+
+
+
+	<!-- id="selectTotalRecord" -->
+	<select id="selectTotalRecord" parameterType="Pagination"
+		resultType="int">
+		SELECT COUNT(*)
+		FROM POST
+		<include refid="searchFrag" />
+	</select>
+
+
+
+	<!-- 공지사항 등록 -->
+	<insert id="insertNoticeBoard" parameterType="PostVO">
+		INSERT INTO POST
+		(
+			POST_ID
+			, POST_TITLE
+			, POST_CNT
+			, POST_DATE
+			, ATCH_ID
+			, BOARD_ID
+			, EMP_ID
+			, POST_CONTENT
+		)
+		VALUES
+		(
+			POST_SEQ.NEXTVAL
+			, #{postTitle,jdbcType=VARCHAR}
+			, 0
+			, SYSDATE
+			, #{atchId,jdbcType=NUMERIC}
+			, 'N001'
+			, 'a100005'
+			, #{postContent,jdbcType=VARCHAR}
+		)
+	</insert>
+
+
+
+	<!-- 공지사항 상세 조회 -->
+	<select id="selectNoticeBoard" parameterType="PostVO">
+		SELECT *
+		FROM(SELECT
+		POST_ID,
+		LEAD(POST_ID) OVER(ORDER BY POST_ID) AS "nextPost.postId",
+		LAG(POST_ID) OVER(ORDER BY POST_ID) AS "prePost.postId",
+		POST_TITLE,
+		LEAD(POST_TITLE) OVER(ORDER BY POST_ID) AS "nextPost.postTitle",
+		LAG(POST_TITLE) OVER(ORDER BY POST_ID) AS "prePost.postTitle",
+		POST_CNT,
+		TO_CHAR(POST_DATE,'YYYY-MM-DD') POST_DATE,
+		ATCH_ID,
+		BOARD_ID,
+		EMP_ID,
+		POST_ISOPEN,
+		POST_CONTENT, 
+		(SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = POST.EMP_ID) EMP_NAME 
+
+		FROM POST 
+		WHERE BOARD_ID = 'N001'
+			ORDER BY POST_ID DESC)
+		WHERE POST_ID = #{postId,jdbcType=NUMERIC} AND BOARD_ID = 'N001' AND POST_ISOPEN = 0
+	</select>
+
+  
+
+
+	<!-- 공지사항 수정 -->
+	<update id="updateNoticeBoard" parameterType="PostVO">
+		UPDATE POST
+		SET
+		POST_TITLE = #{postTitle,jdbcType=VARCHAR}
+		, POST_CONTENT = #{postContent,jdbcType=VARCHAR}
+		WHERE POST_ID =
+		#{postId,jdbcType=NUMERIC}
+	</update>
+
+
+
+	<!-- 조회수 증가 -->
+	<update id="updateNoticePostCNT" parameterType="int">
+		UPDATE POST
+		SET
+		POST_CNT = POST_CNT + 1
+		WHERE POST_ID = #{postId} AND BOARD_ID = 'N001'
+	</update>
+
+
+
+	<!-- 공지사항 삭제 -->
+	<delete id="deleteNoticeBoard" parameterType="PostVO">
+		UPDATE POST
+		SET
+		POST_ISOPEN = 1
+		WHERE POST_ID = #{postId} AND BOARD_ID = 'N001'
+	</delete>
+
+
+	<!-- 공지 사항 검색 -->
+	<select id="searchNoticeBoard" parameterType="string" resultType="PostVO">
+		SELECT *
+		FROM POST
+		WHERE POST_TITLE LIKE '%' || #{schWord} || '%' OR POST_CONTENT LIKE '%' ||
+		#{schWord} || '%' AND BOARD_ID = 'N001'
+	</select>
+
+
+	
+	
+
+</mapper>
+
+

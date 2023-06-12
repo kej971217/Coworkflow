@@ -1,0 +1,858 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.approval.dao.ApprovalDAO">
+   <sql id="searchFrag">
+      <where>
+         <if test="simpleCondition neq null and @org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+            <choose>
+               <when test="simpleCondition.searchType eq 'aprvDocTitle'">
+                  INSTR(APRV_DOC_TITLE, #{simpleCondition.searchWord}) > 0
+               </when>
+               <otherwise>
+                  INSTR(APRV_DOC_TITLE, #{simpleCondition.searchWord}) > 0
+               </otherwise>
+            </choose>
+         </if>
+      </where>
+   </sql>
+   
+   <select id="selectApprovalList" parameterType="ApprovalDocumentVO" resultType="ApprovalDocumentVO">
+		      SELECT B.*
+		      FROM (
+		         SELECT ROWNUM RNUM, A.*
+		         FROM (SELECT DISTINCT
+		                A.aprv_doc_id,
+		                A.emp_id,
+		                E.emp_name emp_name,
+		                A.aprv_doc_title,
+		                A.isurgent,
+		                A.atrz_form_id,
+		                A.aprv_doc_reference,
+		                A.receiver,
+		                TO_char(A.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+		                A.atch_id,
+		                F.ATRZ_FORM_NAME
+		            FROM approval_document A JOIN EMPLOYEE E ON E.EMP_ID=A.EMP_ID
+		                              JOIN AUTHORIZATION_FORM F ON A.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+		            WHERE A.emp_id = #{empId,jdbcType=VARCHAR} AND A.isuse=0
+		            <include refid="searchFrag" />  
+		            ORDER BY aprv_doc_date DESC
+		            
+		            ) A
+               ) B
+               <![CDATA[
+                  WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+               ]]>
+   </select>
+   
+   <select id="selectTempApprovalList" parameterType="ApprovalDocumentVO" resultType="ApprovalDocumentVO">
+       SELECT B.*
+	      FROM (
+	         SELECT ROWNUM RNUM, A.*
+	         FROM (SELECT DISTINCT
+	                A.aprv_doc_id,
+	                A.emp_id,
+	                E.emp_name,
+	                A.aprv_doc_title,
+	                A.isurgent,
+	                A.atrz_form_id,
+	                A.aprv_doc_reference,
+	                A.receiver,
+	                TO_char(A.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+	                A.atch_id,
+	                F.ATRZ_FORM_NAME
+	            FROM TEMP_APRV_DOC A JOIN EMPLOYEE E ON E.EMP_ID=A.EMP_ID
+	                              JOIN AUTHORIZATION_FORM F ON A.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+	            WHERE A.emp_id = #{empId,jdbcType=VARCHAR}
+	            <include refid="searchFrag" />
+	            ORDER BY aprv_doc_date DESC
+	            ) A
+               ) B
+               <![CDATA[
+                  WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+               ]]>
+   </select>
+   
+   <select id="selectAprvList" parameterType="ApprovalDocumentVO" resultType="ApprovalDocumentVO">
+            SELECT DISTINCT
+                A.aprv_doc_id,
+                A.emp_id,
+                E.emp_name,
+                A.aprv_doc_title,
+                A.isurgent,
+                A.atrz_form_id,
+                A.aprv_doc_reference,
+                A.receiver,
+                TO_char(A.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+                A.atch_id,
+                F.ATRZ_FORM_NAME
+            FROM approval_document A JOIN EMPLOYEE E ON E.EMP_ID=A.EMP_ID
+                              JOIN AUTHORIZATION_FORM F ON A.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+            WHERE A.emp_id = #{empId,jdbcType=VARCHAR} AND A.isuse=0
+            ORDER BY aprv_doc_date DESC
+   </select>
+   
+   <select id="selectRunApprovalList" parameterType="Pagination" resultType="ApprovalDocumentVO">
+       SELECT B.*
+      FROM (
+         SELECT ROWNUM RNUM, A.*
+         FROM (SELECT distinct
+                   AD.aprv_doc_id,
+                   AD.emp_id,
+                   E.emp_name,
+                   AD.aprv_doc_title,
+                   AD.isurgent,
+                   AD.atrz_form_id,
+                   AD.aprv_doc_reference,
+                   AD.receiver,
+                   TO_char(AD.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+                   AD.atch_id,
+                   F.ATRZ_FORM_NAME
+               FROM approval_document AD JOIN EMPLOYEE E ON E.EMP_ID=AD.EMP_ID
+                                    JOIN AUTHORIZATION_FORM F ON AD.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+               WHERE AD.emp_id = #{empId,jdbcType=VARCHAR} and ad.isuse=0 and AD.APRV_DOC_ID NOT IN (SELECT I.APRV_DOC_ID
+                                     FROM ISAPPROVAL I, (
+                                         SELECT APRV_DOC_ID
+                                         FROM isapproval
+                                         WHERE EMP_ID = #{empId,jdbcType=VARCHAR}
+                                     ) IR
+                                     WHERE I.APRV_DOC_ID = IR.APRV_DOC_ID and I.isapproval_status=2)
+            <include refid="searchFrag" />      
+                     ORDER BY aprv_doc_date DESC
+                  ) A
+               ) B
+               <![CDATA[
+                  WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+               ]]>
+   </select>
+   
+   <select id="selectAprvAtrzEndList" parameterType="Pagination" resultType="ApprovalDocumentVO">
+   	            SELECT B.*
+      FROM (
+         SELECT ROWNUM RNUM, A.*
+         FROM (SELECT distinct
+                   AD.aprv_doc_id,
+                   AD.emp_id,
+                   E.emp_name,
+                   AD.aprv_doc_title,
+                   AD.isurgent,
+                   AD.atrz_form_id,
+                   AD.aprv_doc_reference,
+                   AD.receiver,
+                   TO_char(AD.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+                   AD.atch_id,
+                   F.ATRZ_FORM_NAME
+               FROM approval_document AD JOIN EMPLOYEE E ON E.EMP_ID=AD.EMP_ID
+                                    JOIN AUTHORIZATION_FORM F ON AD.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+                 WHERE AD.emp_id = #{empId,jdbcType=VARCHAR} 
+                   and ad.isuse=0 
+                   and AD.APRV_DOC_ID IN (select i.aprv_doc_id                                                
+                                            from isapproval i, (SELECT aprv_doc_id, MAX(aprv_turn) AS last_turn
+                                                                    FROM isapproval
+                                                                    GROUP BY aprv_doc_id) lt
+                                            where lt.last_turn = i.aprv_turn 
+                                            and lt.aprv_doc_id = i.aprv_doc_id 
+                                            and i.isapproval_status = 1 
+                                            and i.aprv_doc_id not in (select aprv_doc_id 
+                                                                        from isapproval
+                                                                        where I.isapproval_status=2))
+			<include refid="searchFrag" />      
+                    ORDER BY aprv_doc_date DESC
+                 ) A
+              ) B
+              <![CDATA[
+                 WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+              ]]>
+   </select>
+   
+   <select id="selectRfrrApprovalList" parameterType="Pagination" resultType="ApprovalDocumentVO">
+      SELECT B.*
+      FROM (
+         SELECT ROWNUM RNUM, A.*
+         FROM (
+	                     SELECT DISTINCT 
+	                A.aprv_doc_id,
+	                A.emp_id,
+	                E.emp_name,
+	                A.aprv_doc_title,
+	                A.isurgent,
+	                A.atrz_form_id,
+	                A.aprv_doc_reference,
+	                A.receiver,
+	                TO_char(A.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+	                A.atch_id,
+	                F.ATRZ_FORM_NAME
+	            FROM approval_document A JOIN EMPLOYEE E ON E.EMP_ID=A.EMP_ID
+	                              JOIN AUTHORIZATION_FORM F ON A.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+                                LEFT OUTER JOIN AUTHORIZATION_REFERRER R ON R.aprv_doc_id = A.aprv_doc_id
+	            WHERE A.isuse = 0 and A.aprv_doc_id in (select aprv_doc_id from AUTHORIZATION_REFERRER where emp_id=#{empId,jdbcType=VARCHAR} )
+	            and R.aprv_doc_id not in(SELECT distinct aprv_doc_id
+	                                       FROM isapproval 
+	                                       where ISAPPROVAL_STATUS = 0 or ISAPPROVAL_STATUS = 2)
+	            <include refid="searchFrag" />      
+	            ORDER BY aprv_doc_date DESC
+	         ) A
+	      ) B
+      <![CDATA[
+         WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+      ]]>
+   </select>
+   
+   <select id="selectApprovalReceiveList" parameterType="Pagination" resultType="ApprovalDocumentVO">
+      SELECT B.*
+      FROM (
+         SELECT ROWNUM RNUM, A.*
+         FROM (SELECT DISTINCT 
+	                A.aprv_doc_id,
+	                A.emp_id,
+	                E.emp_name,
+	                A.aprv_doc_title,
+	                A.isurgent,
+	                A.atrz_form_id,
+	                A.aprv_doc_reference,
+	                A.receiver,
+	                TO_char(A.aprv_doc_date, 'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+	                A.atch_id,
+	                F.ATRZ_FORM_NAME
+	            FROM approval_document A JOIN EMPLOYEE E ON E.EMP_ID=A.EMP_ID
+	                              JOIN AUTHORIZATION_FORM F ON A.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+	            WHERE A.receiver = #{empId,jdbcType=VARCHAR}
+                    AND A.isuse = 0 
+                    AND A.aprv_doc_id not in(SELECT distinct aprv_doc_id
+                                                                         FROM isapproval 
+                                                                         where ISAPPROVAL_STATUS = 0 and ISAPPROVAL_STATUS = 2)
+	            <include refid="searchFrag" />      
+	            ORDER BY aprv_doc_date DESC
+	         ) A
+	      ) B
+	      <![CDATA[
+	         WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+	      ]]>
+   </select>
+   
+   <select id="selectUnsetApprovalList" parameterType="Pagination" resultType="ApprovalDocumentVO">
+      SELECT B.*
+      FROM (
+         SELECT ROWNUM RNUM, A.*
+         FROM (                SELECT
+                   AD.aprv_doc_id,
+                   AD.emp_id,
+                   E.emp_name,
+                   AD.aprv_doc_title,
+                   AD.isurgent,
+                   AD.atrz_form_id,
+                   AD.aprv_doc_reference,
+                   AD.receiver,
+                   TO_char(AD.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+                   AD.atch_id,
+                   F.ATRZ_FORM_NAME
+               FROM approval_document AD JOIN EMPLOYEE E ON E.EMP_ID=AD.EMP_ID
+                                    JOIN AUTHORIZATION_FORM F ON AD.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+               WHERE Ad.isuse=0 and AD.APRV_DOC_ID IN (select I.APRV_DOC_ID 
+                                                from isapproval I, (SELECT APRV_TURN, APRV_DOC_ID, (APRV_TURN - 1) preturn
+                                         FROM isapproval
+                                         WHERE ISAPPROVAL_STATUS = 0 and EMP_ID = #{empId,jdbcType=VARCHAR} and aprv_doc_id not in (select aprv_doc_id
+                                                                                from isapproval
+                                                                                where isapproval_status = 2 )) pt
+                                                    where pt.APRV_DOC_ID = I.APRV_DOC_ID and pt.preturn = I.APRV_TURN and I.ISAPPROVAL_STATUS = 1)
+            <include refid="searchFrag" />      
+            ORDER BY aprv_doc_date DESC
+         ) A
+      ) B
+      <![CDATA[
+         WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+      ]]>
+   </select>
+   
+   <select id="selectPreApprovalList" parameterType="Pagination" resultType="ApprovalDocumentVO">
+      SELECT B.*
+      FROM (
+         SELECT ROWNUM RNUM, A.*
+         FROM (SELECT
+                   AD.aprv_doc_id,
+                   AD.emp_id,
+                   E.emp_name,
+                   AD.aprv_doc_title,
+                   AD.isurgent,
+                   AD.atrz_form_id,
+                   AD.aprv_doc_reference,
+                   AD.receiver,
+                   TO_char(AD.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+                   AD.atch_id,
+                   F.ATRZ_FORM_NAME
+               FROM approval_document AD JOIN EMPLOYEE E ON E.EMP_ID=AD.EMP_ID
+                                    JOIN AUTHORIZATION_FORM F ON AD.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+               WHERE Ad.isuse=0 and AD.APRV_DOC_ID IN (select I.APRV_DOC_ID 
+                                                from isapproval I, (SELECT APRV_TURN, APRV_DOC_ID, (APRV_TURN - 1) preturn
+                                         FROM isapproval
+                                         WHERE ISAPPROVAL_STATUS = 0 and EMP_ID = #{empId,jdbcType=VARCHAR} and aprv_doc_id not in (select aprv_doc_id
+                                                                                from isapproval
+                                                                                where isapproval_status = 2)) pt
+                                                    where pt.APRV_DOC_ID = I.APRV_DOC_ID and pt.preturn = I.APRV_TURN and I.ISAPPROVAL_STATUS = 0)
+            <include refid="searchFrag" />      
+            ORDER BY aprv_doc_date DESC
+         ) A
+      ) B
+      <![CDATA[
+         WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+      ]]>
+   </select>
+   
+   <select id="selectDeputyApprovalList" parameterType="Pagination" resultType="ApprovalDocumentVO">
+      SELECT B.*
+      FROM (
+         SELECT ROWNUM RNUM, A.*
+         FROM ( SELECT DISTINCT 
+                A.aprv_doc_id,
+                A.emp_id,
+                E.emp_name,
+                A.aprv_doc_title,
+                A.isurgent,
+                A.atrz_form_id,
+                A.aprv_doc_reference,
+                A.receiver,
+                TO_char(A.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+                A.atch_id,
+                F.ATRZ_FORM_NAME
+            FROM approval_document A JOIN EMPLOYEE E ON E.EMP_ID=A.EMP_ID
+                              JOIN AUTHORIZATION_FORM F ON A.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+                                        LEFT OUTER JOIN DEPUTY_APPROVER D ON D.EMP_ID = A.emp_id
+                WHERE A.APRV_DOC_ID IN (select distinct I.APRV_DOC_ID
+                                                from isapproval I, DEPUTY_APPROVER D,  (SELECT distinct I.APRV_TURN, I.APRV_DOC_ID, (I.APRV_TURN-1) preturn, I.emp_id
+                                                                        FROM ISAPPROVAL I,DEPUTY_APPROVER D
+                                                                        WHERE DEPUTY_APPROVER_EMP = #{empId,jdbcType=VARCHAR}
+                                                                          and I.EMP_ID = D.EMP_ID and I.aprv_doc_id not in (select aprv_doc_id
+                                                                                                    from ISAPPROVAL
+                                                                                                    where isapproval_status = 2)) pt
+                                                    where pt.APRV_DOC_ID = I.APRV_DOC_ID and pt.preturn = I.APRV_TURN and isapproval_status = 1
+                                                    and ( I.ISAPPROVAL_DATE BETWEEN D.DEPUTY_APPROVER_BGN and D.DEPUTY_APPROVER_END)) AND A.isuse=0
+            <include refid="searchFrag" />      
+            ORDER BY aprv_doc_date DESC
+         ) A
+      ) B
+      <![CDATA[
+         WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+      ]]>
+   </select>
+   
+   <select id="selectAtrzApprovalList" parameterType="Pagination" resultType="ApprovalDocumentVO">
+      SELECT B.*
+      FROM (
+         SELECT ROWNUM RNUM, A.*
+         FROM (SELECT distinct
+                   AD.aprv_doc_id,
+                   AD.emp_id,
+                   E.emp_name,
+                   AD.aprv_doc_title,
+                   AD.isurgent,
+                   AD.atrz_form_id,
+                   AD.aprv_doc_reference,
+                   AD.receiver,
+                   TO_char(AD.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+                   AD.atch_id,
+                   F.ATRZ_FORM_NAME
+               FROM approval_document AD JOIN EMPLOYEE E ON E.EMP_ID=AD.EMP_ID
+                                    JOIN AUTHORIZATION_FORM F ON AD.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+               WHERE ad.isuse=0 and AD.APRV_DOC_ID IN (SELECT I.APRV_DOC_ID
+                                     FROM ISAPPROVAL I, (
+                                         SELECT APRV_DOC_ID
+                                         FROM isapproval
+                                         WHERE EMP_ID = #{empId,jdbcType=VARCHAR} and isapproval_status = 1 or isapproval_status=2
+                                     ) IR
+                                     WHERE I.APRV_DOC_ID = IR.APRV_DOC_ID)
+            <include refid="searchFrag" />      
+            ORDER BY aprv_doc_date DESC
+         ) A
+      ) B
+      <![CDATA[
+         WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+      ]]>
+   </select>
+   
+   <select id="selectRejectApprovalList" parameterType="Pagination" resultType="ApprovalDocumentVO">
+      SELECT B.*
+      FROM (
+         SELECT ROWNUM RNUM, A.*
+         FROM (
+                  SELECT distinct
+                   AD.aprv_doc_id,
+                   AD.emp_id,
+                   E.emp_name,
+                   AD.aprv_doc_title,
+                   AD.isurgent,
+                   AD.atrz_form_id,
+                   AD.aprv_doc_reference,
+                   AD.receiver,
+                   TO_char(AD.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+                   AD.atch_id,
+                   F.ATRZ_FORM_NAME
+               FROM approval_document AD JOIN EMPLOYEE E ON E.EMP_ID=AD.EMP_ID
+                                    JOIN AUTHORIZATION_FORM F ON AD.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+               WHERE ad.isuse=0 and AD.APRV_DOC_ID IN (SELECT I.APRV_DOC_ID
+                                     FROM ISAPPROVAL I, (
+                                         SELECT APRV_DOC_ID
+                                         FROM isapproval
+                                         WHERE EMP_ID = #{empId,jdbcType=VARCHAR}
+                                     ) IR
+                                     WHERE I.APRV_DOC_ID = IR.APRV_DOC_ID and I.isapproval_status=2)
+                        <include refid="searchFrag" />      
+            ORDER BY aprv_doc_date DESC
+         ) A
+      ) B
+      <![CDATA[
+         WHERE RNUM >= #{startRow} and RNUM <= #{endRow}
+      ]]>
+   </select>
+   
+   <select id="selectTotalRecord" parameterType="Pagination" resultType="int">
+      SELECT COUNT(*)
+      FROM approval_document
+      <include refid="searchFrag" />
+   </select>
+   
+   <select id="selectApproval" parameterType="string" resultType="ApprovalDocumentVO">
+             SELECT 
+          A.aprv_doc_id,
+          A.emp_id,
+            (select emp_name from employee where emp_id = A.emp_id) emp_name,
+            D.team_name,
+          A.aprv_doc_title,
+          A.isurgent,
+          A.atrz_form_id,
+          A.aprv_doc_reference,
+          A.receiver,
+            (select emp_name from employee where emp_id = A.receiver) receiver_name,
+            ARD.TEAM_NAME receiver_dpmt,
+          TO_char(A.aprv_doc_date,'YYYY-MM-DD HH24:mm') as aprv_doc_date,
+          A.atch_id,
+          A.aprv_content,
+            F.ATRZ_FORM_NAME,
+            F.ATRZ_FORM_NAME
+            FROM approval_document A JOIN EMPLOYEE E ON E.EMP_ID=A.EMP_ID
+                                        join ORGANIZATION_INFO OI on OI.emp_id = A.emp_id
+                                        JOIN DEPARTMENT D  on OI.team_id = D.team_id
+                                        JOIN AUTHORIZATION_FORM F ON A.ATRZ_FORM_ID=F.ATRZ_FORM_ID
+                                        LEFT OUTER JOIN ORGANIZATION_INFO ARO ON ARO.EMP_ID=A.receiver
+                                        LEFT OUTER JOIN DEPARTMENT ARD ON ARO.TEAM_ID=ARD.TEAM_ID
+      WHERE
+          A.aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR}
+   </select>
+   
+   <select id="selectAtrzLineList" parameterType="string" resultType="IsApprovalVO">
+      SELECT DISTINCT 
+          I.isapproval_id,
+          I.isapproval_status,
+          I.isapproval_reason,
+          TO_char(I.isapproval_date,'YY.MM.DD') isapproval_date,
+          I.aprv_doc_id,
+          I.emp_id,
+          E.emp_name,
+          I.emp_dpt_id,
+          I.aprv_turn,
+          O.POSITION_ID,
+          (select C.comm_name from COMM C where O.position_id=C.comm_id) position_name
+      FROM
+           isapproval I JOIN ORGANIZATION_INFO O ON I.emp_id = o.emp_id
+                    JOIN EMPLOYEE E ON E.EMP_ID=I.EMP_ID
+      where I.aprv_doc_id = #{aprvDocId}
+      order by I.aprv_turn asc
+      
+   </select>
+   
+   <select id="selectDraftFormList" resultType="DraftFormVO">
+      SELECT
+          atrz_form_id,
+          atrz_form_name,
+          isuse,
+          TO_char(atrz_form_date,'YYYY-MM-DD HH24:mm') as atrz_form_date,
+          atrz_form_content
+      FROM
+          authorization_form
+      WHERE
+          isuse = 0
+          ORDER BY atrz_form_id ASC
+   </select>
+   
+   <select id="selectDraftFormDPMTList" resultType="string">
+      SELECT DISTINCT
+          ATRZ_DPMT
+      FROM
+          authorization_form
+      WHERE
+          isuse = 0
+   </select>
+   
+   <select id="selectDraftForm" parameterType="int" resultType="DraftFormVO">
+      SELECT
+          atrz_form_id,
+          atrz_form_name,
+          isuse,
+          TO_char(atrz_form_date,'YYYY-MM-DD HH24:mm') as atrz_form_date,
+          atrz_form_content
+      FROM
+          authorization_form
+      WHERE
+          atrz_form_id = #{atrzFormId,jdbcType=NUMERIC}
+   </select>
+   
+   <select id="selectDraftEmpInfo" parameterType="string" resultType="EmployeeDPMTVO">
+      SELECT 
+         E.EMP_ID, 
+         E.EMP_NAME, 
+         D.TEAM_NAME,
+         P.COMM_NAME position_name
+      FROM ORGANIZATION_INFO O JOIN EMPLOYEE E ON O.EMP_ID=E.EMP_ID
+                              JOIN DEPARTMENT D ON O.TEAM_ID=D.TEAM_ID
+                              JOIN COMM P ON (P.COMM_ID = O.POSITION_ID)
+      WHERE e.emp_id=#{empId,jdbcType=VARCHAR}
+   </select>
+   
+   <insert id="insertDraft" parameterType="ApprovalDocumentVO" >
+      <selectKey order="BEFORE" resultType="string" keyProperty="aprvDocId">
+           SELECT TO_CHAR(SYSDATE, 'YYMMDD') || LPAD(
+             COALESCE(
+                 TO_NUMBER(SUBSTR(MAX(aprv_doc_id), 7)),
+                 0
+             ) + 1,
+             3,
+             '0'
+         ) as aprv_doc_id
+         FROM approval_document
+         WHERE SUBSTR(aprv_doc_id, 1, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
+      </selectKey>
+   INSERT INTO approval_document (
+       aprv_doc_id,
+       emp_id,
+       aprv_doc_title,
+       aprv_content,
+       isurgent,
+       atrz_form_id,
+       aprv_doc_reference,
+       receiver,
+       aprv_doc_date,
+       atch_id,
+       isuse
+   ) VALUES (
+       #{aprvDocId},
+       #{empId,jdbcType=VARCHAR},
+       #{aprvDocTitle,jdbcType=VARCHAR},
+       #{aprvContent,jdbcType=CLOB},
+       #{isurgent,jdbcType=VARCHAR},
+       #{atrzFormId,jdbcType=NUMERIC},
+       #{aprvDocReference,jdbcType=NUMERIC},
+       #{receiver,jdbcType=VARCHAR},
+       SYSDATE,
+       #{atchId,jdbcType=NUMERIC},
+       0
+   )
+   </insert>
+   
+   <insert id="insertDraftTemp" parameterType="ApprovalDocumentVO" >
+      <selectKey order="BEFORE" resultType="string" keyProperty="aprvDocId">
+           SELECT 'temp' || LPAD(
+             COALESCE(
+                 MAX(TO_NUMBER(REGEXP_REPLACE(aprv_doc_id, '[^0-9]', ''))) + 1,
+                 0
+             ),
+             3,
+             '0'
+         ) AS aprv_doc_id
+         FROM TEMP_APRV_DOC
+      </selectKey>
+   INSERT INTO TEMP_APRV_DOC (
+       aprv_doc_id,
+       emp_id,
+       aprv_doc_title,
+       aprv_content,
+       isurgent,
+       atrz_form_id,
+       aprv_doc_reference,
+       receiver,
+       aprv_doc_date,
+       atch_id
+   ) VALUES (
+       #{aprvDocId},
+       #{empId,jdbcType=VARCHAR},
+       #{aprvDocTitle,jdbcType=VARCHAR},
+       #{aprvContent,jdbcType=CLOB},
+       #{isurgent,jdbcType=NUMERIC},
+       #{atrzFormId,jdbcType=NUMERIC},
+       #{aprvDocReference,jdbcType=NUMERIC},
+       #{receiverId,jdbcType=VARCHAR},
+       SYSDATE,
+       #{atchId,jdbcType=NUMERIC}
+   )
+   </insert>
+   
+   <update id="deleteDraft" parameterType="string">
+        UPDATE approval_document
+             set isuse = 1
+        WHERE
+              aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR}
+   </update>
+   
+   <select id="aprvEmpList" parameterType="string" resultType="IsApprovalVO">
+      SELECT
+          isapproval_id,
+          isapproval_status,
+          isapproval_reason,
+          isapproval_date,
+          aprv_doc_id,
+          emp_id,
+          emp_dpt_id,
+          aprv_turn
+      FROM
+          isapproval
+      WHERE
+              aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR}
+   </select>
+   
+   <select id="rfrrEmpList" parameterType="string" resultType="AuthorizationReferrerVO">
+       SELECT
+            distinct 
+             r.referrer_id,
+             r.emp_id,
+             r.aprv_doc_id,
+             e.emp_name atrz_rfrr_emp_name,
+             do.team_name atrz_rfrr_emp_dpmt
+             
+         FROM
+            (select d.team_name, o.emp_id from department d join organization_info o on o.team_id = d.team_id) do,
+             authorization_referrer r join employee e on r.emp_id = e.emp_id
+             
+         WHERE
+              aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR} and do.emp_id=r.emp_id 
+   </select>
+   
+   <select id="rfrcDocList">
+   </select>
+   <select id="aprvEmpCheck" resultType="string">
+      SELECT
+          DISTINCT aprv_doc_id
+      FROM
+          AUTHORIZATION_REFERRER   
+       where aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR}
+   </select>
+   
+   <select id="aprvRfrrCheck" resultType="string">
+      SELECT
+          DISTINCT aprv_doc_id
+      FROM
+          isapproval  
+      where aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR}
+   </select>
+   <select id="replyCheck" resultType="string">
+      SELECT
+          DISTINCT aprv_doc_id
+      FROM
+          AUTHORIZATION_REPLY  
+      where aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR}
+   </select>
+   <select id="selectReplyList" parameterType="string" resultType="AuthorizationReplyVO">
+       SELECT
+          R.atrz_reply_id,
+          R.emp_id,
+          R.atrz_reply_date,
+          R.isopen,
+          R.aprv_doc_id,
+          R.atrz_reply_content,
+          E.emp_name
+      FROM
+          authorization_reply R JOIN EMPLOYEE E ON E.EMP_ID=R.EMP_ID
+          WHERE
+              aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR}  
+              and R.isopen=0
+              ORDER BY atrz_reply_date DESC
+   </select>
+   <select id="replyEmpProfile" parameterType="string" resultType="string">
+   		select A.emp_atch_save_name 
+			from employee E join emp_atch_file A on A.emp_atch_id = E. emp_atch_id
+			where E.emp_id = #{empId,jdbcType=VARCHAR} and emp_atch_clasfct=0 
+   </select>
+   
+   <insert id="insertReply" parameterType="AuthorizationReplyVO">
+       INSERT INTO authorization_reply (
+          atrz_reply_id,
+          emp_id,
+          atrz_reply_date,
+          isopen,
+          aprv_doc_id,
+          atrz_reply_content
+      ) VALUES (
+          ATRZ_REPLY_SEQ.NEXTVAL,  
+          #{empId,jdbcType=VARCHAR},
+          sysdate,
+          0,
+          #{aprvDocId,jdbcType=VARCHAR},  
+          #{atrzReplyContent,jdbcType=VARCHAR}
+      )
+   </insert>
+   <update id="deleteReply" parameterType="int">
+      update authorization_reply 
+      set isopen = 1
+      where atrz_reply_id = #{atrzReplyId,jdbcType=NUMERIC}
+   </update>
+   
+   <update id="updateDraft" parameterType="ApprovalDocumentVO">
+      UPDATE approval_document
+         SET
+             aprv_doc_title = #{aprvDocTitle,jdbcType=VARCHAR},
+             isurgent = #{isurgent,jdbcType=NUMERIC},
+             aprv_doc_reference = #{aprvDocReference,jdbcType=NUMERIC},
+             receiver = #{receiverId,jdbcType=VARCHAR},
+             aprv_doc_date = sysdate,
+             atch_id = #{atchId,jdbcType=NUMERIC},
+             aprv_content = #{aprvContent,jdbcType=CLOB}
+         WHERE
+             aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR} 
+   </update>
+   
+   <insert id="insertIsapprovalEmp" parameterType="IsApprovalVO">
+   INSERT INTO isapproval (
+       isapproval_id,
+       isapproval_status,
+       aprv_doc_id,
+       emp_id,
+       aprv_turn
+   ) VALUES (
+       ISAPPROVAL_SEQ.NEXTVAL,
+       0,
+       #{aprvDocId,jdbcType=VARCHAR},
+       #{empId,jdbcType=VARCHAR},
+       #{aprvTurn,jdbcType=NUMERIC}
+   )
+   </insert>
+   
+   <update id="updateIsapprovalEmp" parameterType="IsapprovalVO">
+      UPDATE isapproval
+      SET
+          isapproval_status = #{empId,jdbcType=NUMERIC},
+          isapproval_reason = #{isapprovalReason,jdbcType=VARCHAR},
+          isapproval_date = sysdate,
+          emp_dpt_id = #{empDptId,jdbcType=VARCHAR},
+      WHERE
+          aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR} and
+          emp_id = #{empId,jdbcType=VARCHAR}
+   </update>
+   
+   
+   <insert id="insertRfrrEmp" parameterType="AuthorizationReferrerVO">
+                  
+      INSERT INTO authorization_referrer (
+          referrer_id,
+          emp_id,
+          aprv_doc_id
+      ) VALUES (
+         RFRR_SEQ.NEXTVAL,
+          #{empId,jdbcType=VARCHAR},
+          #{aprvDocId,jdbcType=VARCHAR}
+      ) 
+   </insert>
+   
+   <update id="insertSignup" parameterType="IsapprovalVO">
+       UPDATE isapproval
+         SET
+             isapproval_status = #{isapprovalStatus,jdbcType=VARCHAR},
+             isapproval_reason = #{isapprovalReason,jdbcType=VARCHAR},
+             isapproval_date = sysdate
+         WHERE
+             aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR}
+           AND emp_id = #{empId,jdbcType=VARCHAR}
+   </update>
+   <update id="insertDeputySignup" parameterType="IsapprovalVO">
+       UPDATE isapproval
+         SET
+             isapproval_status = #{isapprovalStatus,jdbcType=VARCHAR},
+             isapproval_reason = #{isapprovalReason,jdbcType=VARCHAR},
+             isapproval_date = sysdate,
+             emp_dpt_id = #{empDptId,jdbcType=VARCHAR}
+         WHERE
+               aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR}
+           AND emp_id = #{empId,jdbcType=VARCHAR}
+   </update>
+   <select id="selectIsapproval" parameterType="IsapprovalVO" resultType="IsapprovalVO">
+	   SELECT
+	    isapproval_id,
+	    isapproval_status,
+	    isapproval_reason,
+	    isapproval_date,
+	    aprv_doc_id,
+	    emp_id,
+	    emp_dpt_id,
+	    aprv_turn
+	FROM
+	    isapproval
+	    where aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR} and emp_id =#{empId,jdbcType=VARCHAR}
+   </select>
+   <select id="nextTurnCheck" parameterType="IsapprovalVO" resultType="IsapprovalVO">
+select distinct I.APRV_DOC_ID 
+              from isapproval I, (SELECT
+                isapproval_id,
+                isapproval_status,
+                isapproval_reason,
+                isapproval_date,
+                aprv_doc_id,
+                emp_id,
+                emp_dpt_id,
+                aprv_turn,
+                (aprv_turn+1) nextTurn
+            FROM
+                isapproval
+                where aprv_doc_id not in(select distinct aprv_doc_id from isapproval where isapproval_status = 2) and aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR} and emp_id = #{empId,jdbcType=VARCHAR})nt
+          where I.aprv_doc_id=nt.aprv_doc_id and((nt.nextTurn = i.aprv_turn and i.isapproval_status = 0)
+          			or(i.emp_id = #{empId,jdbcType=VARCHAR} and i.isapproval_status = 0)or (nt.aprv_turn = i.aprv_turn and i.isapproval_status = 0))
+   </select>
+   <select id="deputyBtnCheck" parameterType="IsapprovalVO" resultType="IsapprovalVO">
+			SELECT DISTINCT I.APRV_DOC_ID 
+	          FROM ISAPPROVAL I, DEPUTY_APPROVER D, ( SELECT DISTINCT
+	                                                        ISAPPROVAL_ID,
+	                                                        ISAPPROVAL_STATUS,
+	                                                        ISAPPROVAL_REASON,
+	                                                        ISAPPROVAL_DATE,
+	                                                        APRV_DOC_ID,
+	                                                        EMP_ID,
+	                                                        EMP_DPT_ID,
+	                                                        APRV_TURN,
+	                                                        (APRV_TURN-1) PRETURN,
+	                                                        (APRV_TURN+1) NEXTTURN
+	                                                    FROM
+	                                                        ISAPPROVAL 
+	                                                    WHERE EMP_ID in (SELECT EMP_ID
+	                                                                     FROM DEPUTY_APPROVER 
+	                                                                    WHERE DEPUTY_APPROVER_EMP = #{empId,jdbcType=VARCHAR})) DI
+	       WHERE I.APRV_DOC_ID NOT IN(SELECT DISTINCT APRV_DOC_ID FROM ISAPPROVAL WHERE ISAPPROVAL_STATUS = 2) 
+	        and i.APRV_DOC_ID = DI.APRV_DOC_ID
+	         AND I.APRV_DOC_ID=#{aprvDocId,jdbcType=VARCHAR}
+	         AND (DI.PRETURN = I.APRV_TURN AND (I.ISAPPROVAL_DATE BETWEEN D.DEPUTY_APPROVER_BGN AND D.DEPUTY_APPROVER_END ))
+   </select>
+   <select id="deleteCheck" parameterType="ApprovalDocumentVO" resultType="ApprovalDocumentVO">
+		 select distinct 
+		    aprv_doc_id,
+		    emp_id,
+		    aprv_doc_title,
+		    isurgent,
+		    atrz_form_id,
+		    aprv_doc_reference,
+		    receiver,
+		    aprv_doc_date,
+		    atch_id,
+		    aprv_content,
+		    isuse
+		from approval_document
+		where emp_id = #{empId,jdbcType=VARCHAR} and aprv_doc_id in(select distinct I.APRV_DOC_ID 
+		                                              from isapproval I, (SELECT
+		                                                                        isapproval_id,
+		                                                                        isapproval_status,
+		                                                                        isapproval_reason,
+		                                                                        isapproval_date,
+		                                                                        aprv_doc_id,
+		                                                                        emp_id,
+		                                                                        emp_dpt_id,
+		                                                                        aprv_turn,
+		                                                                        (aprv_turn+1) nextTurn
+		                                                                    FROM
+		                                                                        isapproval
+		                                                                        where aprv_doc_id not in(select distinct aprv_doc_id from isapproval where isapproval_status = 2) and aprv_doc_id = #{aprvDocId,jdbcType=VARCHAR} and emp_id = #{empId,jdbcType=VARCHAR})nt
+		                                              where I.aprv_doc_id=nt.aprv_doc_id and nt.nextTurn = i.aprv_turn and i.isapproval_status = 0)
+   </select>
+</mapper>

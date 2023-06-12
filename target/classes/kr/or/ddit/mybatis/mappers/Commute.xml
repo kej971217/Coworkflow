@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.employeeInfo.dao.CommuteDAO">
+
+	<insert id="insertMyCommute" parameterType="CommuteVO">
+		INSERT INTO COMMUTE (
+		    COMMUTE_ID
+		    , COMMUTE_START
+		    , COMMUTE_END
+		    , COMMUTE_DATE
+		    , EMP_ID
+		    , COMMUTE_STATUS
+		) VALUES (
+		    (SELECT NVL(MAX(COMMUTE_ID), 0)+1 FROM COMMUTE)
+		    , SYSTIMESTAMP
+		    , NULL
+		    , SYSTIMESTAMP
+		    , #{empId}
+		    , 'E001'
+		)
+	</insert>
+	
+	<update id="updateMyCommute" parameterType="CommuteVO" >
+		UPDATE COMMUTE
+		SET
+		    COMMUTE_END = SYSTIMESTAMP
+		    , COMMUTE_STATUS = 'E002'
+		WHERE
+		    TRUNC(COMMUTE_DATE)=TRUNC(SYSDATE)
+		    AND EMP_ID = #{empId}
+	</update>
+	
+	<select id="selectMyCommuteToday" parameterType="CommuteVO" resultType="CommuteVO">
+		SELECT ROWNUM RNUM, A.*
+		FROM 
+		(
+		    SELECT
+		        COMMUTE_ID
+		        , COMMUTE_START
+		        , COMMUTE_END
+		        , COMMUTE_DATE
+		        , EMP_ID
+		        , COMMUTE_STATUS
+		        
+		        , (SELECT COMM_NAME FROM COMM WHERE COMM_ID = COMMUTE_STATUS) COMMUTE_STATUS_VALUE
+		    FROM
+		        COMMUTE
+		    WHERE
+		        TRUNC(COMMUTE_DATE)=TRUNC(SYSDATE)
+		        AND EMP_ID = #{empId}
+		    ORDER BY COMMUTE_ID DESC
+		) A
+		WHERE ROWNUM = 1
+	</select>
+	
+	<select id="selectMyCommuteList" parameterType="CommuteVO" resultType="CommuteVO">
+		SELECT B.*
+		FROM
+		(
+		    SELECT ROWNUM RNUM, A.*
+		    FROM
+		    (
+		        SELECT
+		            C.COMMUTE_ID, 
+		            C.COMMUTE_START, 
+		            C.COMMUTE_END, 
+		            C.COMMUTE_DATE, 
+		            C.EMP_ID, 
+		            C.COMMUTE_STATUS,
+				            
+				    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = C.COMMUTE_STATUS) COMMUTE_STATUS_VALUE,
+		            (SELECT EMP_NAME FROM EMPLOYEE E WHERE E.EMP_ID = C.EMP_ID) EMP_NAME,
+		            (SELECT COMM_NAME FROM COMM WHERE COMM_ID = F.RANK_ID) RANK_NAME,
+		            (SELECT COMM_NAME FROM COMM WHERE COMM_ID = F.POSITION_ID) POSITION_NAME,
+		            (SELECT COMM_NAME FROM COMM WHERE COMM_ID = F.JOB_ID) JOB_NAME
+				FROM
+		            COMMUTE C JOIN ORGANIZATION_INFO F ON (C.EMP_ID = F.EMP_ID)
+		        WHERE
+		            C.EMP_ID = #{empId,jdbcType=VARCHAR}
+		        ORDER BY COMMUTE_ID DESC
+		    ) A
+		) B
+	</select>
+
+
+<!-- 	<resultMap type="CommuteVO" id="commuteTeamMap"> -->
+<!-- 		<id column="COMMUTE_ID" property="commuteId"/> -->
+<!-- 		<association property="comm" javaType="CommVO" autoMapping="true" /> -->
+<!-- 		<association property="orgInfo" javaType="OrganizationInfoVO" autoMapping="true" /> -->
+<!-- 		<association property="dep" javaType="DepartmentVO" autoMapping="true" /> -->
+<!-- 	</resultMap> -->
+	
+	
+<!-- 	<resultMap id="boardMap" type="BoardVO" autoMapping="true"> -->
+<!-- 		<id property="boardId" column="BOARD_ID"/> -->
+<!-- 		<collection property="postList" ofType="PostVO" autoMapping="true" /> -->
+<!-- 	</resultMap> -->
+
+	<select id="selectTeamCommuteList" parameterType="TabulatorPagination" resultType="CommuteVO">
+		SELECT B.*
+		FROM
+		(
+		    SELECT ROWNUM RNUM, A.*
+		    FROM
+		    (
+		        SELECT 
+		            O.OGNZT_ID
+		            , O.EMP_ID
+		            , O.TEAM_ID
+		            , O.ISUSE
+		            , O.APPOINTMENT_DATE
+		            , O.RANK_ID
+		            , O.POSITION_ID
+		            , O.JOB_ID
+		            
+		            , C.COMMUTE_ID
+		            , C.COMMUTE_START
+		            , C.COMMUTE_END
+		            , C.COMMUTE_DATE
+<!-- 		        , C.EMP_ID -->
+		            , C.COMMUTE_STATUS
+		            
+<!-- 		        , D.TEAM_ID -->
+		            , D.TEAM_NAME
+		            , D.TEAM_GOAL
+		            , D.QUARTLY_GOAL
+<!-- 		        , D.ISUSE -->
+		            , D.BELONG_TEAM
+<!-- 		        , D.EMP_ID -->
+
+
+            		, (SELECT COMM_NAME FROM COMM WHERE COMM_ID = C.COMMUTE_STATUS) COMMUTE_STATUS_VALUE
+            
+<!--             		, E.EMP_NAME "emp.empName" -->
+            		, E.EMP_NAME
+            		
+            		
+		            
+<!-- 		            , (SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = O.EMP_ID) AS EMP_NAME -->
+		            , (SELECT COMM_NAME FROM COMM WHERE COMM_ID = O.RANK_ID) AS RANK_NAME
+		            , (SELECT COMM_NAME FROM COMM WHERE COMM_ID = O.POSITION_ID) AS POSITION_NAME
+		            , (SELECT COMM_NAME FROM COMM WHERE COMM_ID = O.JOB_ID) AS JOB_NAME
+		            
+		        FROM ORGANIZATION_INFO O RIGHT OUTER JOIN COMMUTE C ON (O.EMP_ID = C.EMP_ID)
+		        	INNER JOIN DEPARTMENT D ON (O.TEAM_ID = D.TEAM_ID)
+            		INNER JOIN EMPLOYEE E ON (O.EMP_ID = E.EMP_ID)
+		        WHERE O.TEAM_ID = (SELECT TEAM_ID FROM ORGANIZATION_INFO WHERE EMP_ID = #{empId,jdbcType=VARCHAR})
+				<if test="tabulatorSimpleCondition neq null and @org.apache.commons.lang3.StringUtils@isNotBlank(tabulatorSimpleCondition.value)">
+					<choose>
+						<when test="tabulatorSimpleCondition.filed eq 'teamName'">
+							INSTR(D.TEAM_NAME, #{tabulatorSimpleCondition.value}) > 0
+						</when>
+						<when test="tabulatorSimpleCondition.filed eq 'empName'">
+							INSTR(E.EMP_NAME, #{tabulatorSimpleCondition.value}) > 0
+						</when>
+						<otherwise>
+							INSTR(D.TEAM_NAME, #{tabulatorSimpleCondition.value) > 0
+							OR
+							INSTR(E.EMP_NAME, #{tabulatorSimpleCondition.value}) > 0
+						</otherwise>
+					</choose>
+				</if>
+		        ORDER BY O.RANK_ID ASC, C.COMMUTE_ID DESC
+		    ) A 
+		    <where>
+		    	<if test="tabulatorSimpleCondition neq null and @org.apache.commons.lang3.StringUtils@isNotBlank(tabulatorSimpleCondition.value)">
+		    		<choose>
+		    		</choose>
+		    	</if>
+		    </where>
+		) B
+		WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+	</select>
+	<select id="selectTotalTeamCommuteRecord" parameterType="TabulatorPagination" resultType="int">
+		SELECT COUNT(*)
+		FROM ORGANIZATION_INFO O RIGHT OUTER JOIN COMMUTE C ON (O.EMP_ID = C.EMP_ID)
+		    INNER JOIN DEPARTMENT D ON (O.TEAM_ID = D.TEAM_ID)
+		    RIGHT OUTER JOIN COMM ON (COMM.COMM_ID = O.RANK_ID)
+		    INNER JOIN EMPLOYEE E ON (O.EMP_ID = E.EMP_ID)
+		WHERE O.TEAM_ID = (SELECT TEAM_ID FROM ORGANIZATION_INFO WHERE EMP_ID = #{empId,jdbcType=VARCHAR})
+		<if test="tabulatorSimpleCondition neq null and @org.apache.commons.lang3.StringUtils@isNotBlank(tabulatorSimpleCondition.value)">
+			<choose>
+				<when test="tabulatorSimpleCondition.filed eq 'teamName'">
+					INSTR(D.TEAM_NAME, #{tabulatorSimpleCondition.value}) > 0
+				</when>
+				<when test="tabulatorSimpleCondition.filed eq 'empName'">
+					INSTR(E.EMP_NAME, #{tabulatorSimpleCondition.value}) > 0
+				</when>
+				<otherwise>
+					INSTR(D.TEAM_NAME, #{tabulatorSimpleCondition.value}) > 0
+					OR
+					INSTR(E.EMP_NAME, #{tabulatorSimpleCondition.value}) > 0
+				</otherwise>
+			</choose>
+		</if>
+	</select>
+
+
+
+
+
+	
+	
+	<update id="updateMyCommuteMeeting" parameterType="CommuteVO" >
+		UPDATE COMMUTE
+		SET
+		    COMMUTE_STATUS = 'E007'
+		WHERE
+		    TRUNC(COMMUTE_DATE)=TRUNC(SYSDATE)
+		    AND EMP_ID = #{empId}
+	</update>
+	<update id="updateMyCommuteOutside" parameterType="CommuteVO" >
+		UPDATE COMMUTE
+		SET
+		    COMMUTE_STATUS = 'E003'
+		WHERE
+		    TRUNC(COMMUTE_DATE)=TRUNC(SYSDATE)
+		    AND EMP_ID = #{empId}
+	</update>
+	<update id="updateMyCommuteBusinessTrip" parameterType="CommuteVO" >
+		UPDATE COMMUTE
+		SET
+		    COMMUTE_STATUS = 'E008'
+		WHERE
+		    TRUNC(COMMUTE_DATE)=TRUNC(SYSDATE)
+		    AND EMP_ID = #{empId}
+	</update>
+	<update id="updateMyCommuteHome" parameterType="CommuteVO" >
+		UPDATE COMMUTE
+		SET
+		    COMMUTE_STATUS = 'E009'
+		WHERE
+		    TRUNC(COMMUTE_DATE)=TRUNC(SYSDATE)
+		    AND EMP_ID = #{empId}
+	</update>
+	<update id="updateMyCommuteOvertime" parameterType="CommuteVO" >
+		UPDATE COMMUTE
+		SET
+		    COMMUTE_STATUS = 'E004'
+		WHERE
+		    TRUNC(COMMUTE_DATE)=TRUNC(SYSDATE)
+		    AND EMP_ID = #{empId}
+	</update>
+	<update id="updateMyCommuteVacation" parameterType="CommuteVO" >
+		UPDATE COMMUTE
+		SET
+		    COMMUTE_STATUS = 'E005'
+		WHERE
+		    TRUNC(COMMUTE_DATE)=TRUNC(SYSDATE)
+		    AND EMP_ID = #{empId}
+	</update>
+	<update id="updateMyCommuteHalfVacation" parameterType="CommuteVO" >
+		UPDATE COMMUTE
+		SET
+		    COMMUTE_STATUS = 'E006'
+		WHERE
+		    TRUNC(COMMUTE_DATE)=TRUNC(SYSDATE)
+		    AND EMP_ID = #{empId}
+	</update>
+</mapper>
+
+<!-- , #{commuteId,jdbcType=NUMERIC} -->
+<!-- , #{commuteStart,jdbcType=TIMESTAMP(6)} -->
+<!-- , #{commuteEnd,jdbcType=TIMESTAMP(6)} -->
+<!-- , #{commuteDate,jdbcType=TIMESTAMP(6)} -->
+<!-- , #{empId,jdbcType=VARCHAR} -->
+<!-- , #{commuteStatus,jdbcType=VARCHAR} -->
+
+<!-- , COMMUTE_ID = #{commuteId,jdbcType=NUMERIC} -->
+<!-- , COMMUTE_START = #{commuteStart,jdbcType=TIMESTAMP(6)} -->
+<!-- , COMMUTE_END = #{commuteEnd,jdbcType=TIMESTAMP(6)} -->
+<!-- , COMMUTE_DATE = #{commuteDate,jdbcType=TIMESTAMP(6)} -->
+<!-- , EMP_ID = #{empId,jdbcType=VARCHAR} -->
+<!-- , COMMUTE_STATUS = #{commuteStatus,jdbcType=VARCHAR} -->

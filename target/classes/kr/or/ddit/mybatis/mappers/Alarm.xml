@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.alarm.dao.AlarmDAO">
+	
+	<select id="selectAlarmList" parameterType="String" resultType="AlarmVO">
+	SELECT
+	    ALM_NUM,
+	    EMP_ID,
+	    ALM_CONTENT,
+	    ALM_ISREAD,
+<!-- 	    SUBSTR(ALM_DATE,1,9) ALM_DATE, -->
+	    ALM_DATE,
+	    ALM_APPONENT,
+	    ALM_TYPE
+	FROM
+	    ALARM 
+	WHERE EMP_ID = #{empId}
+	AND ALM_ISREAD = 'N'
+	ORDER BY ALM_DATE DESC
+	</select>
+
+	<!-- 알람 등록 쿼리  -->
+   <insert id="insertAlarm" parameterType="AlarmVO">
+   <selectKey resultType="int" order="BEFORE" keyProperty="almNum">
+   		SELECT ALM_SEQ.NEXTVAL 
+   		FROM DUAL
+   </selectKey>
+   
+	INSERT INTO ALARM (
+		ALM_NUM,
+	    EMP_ID,
+	    ALM_CONTENT,
+	    ALM_ISREAD,
+	    ALM_DATE,
+	    ALM_APPONENT,
+	    ALM_TYPE
+	
+	) VALUES (
+	  
+	#{almNum,jdbcType=NUMERIC}
+	, #{empId,jdbcType=VARCHAR}
+	, #{almContent,jdbcType=VARCHAR}
+	, 'N'
+	, SYSTIMESTAMP
+	, #{almApponent,jdbcType=VARCHAR}
+	, #{almType,jdbcType=VARCHAR}
+	)
+   
+   </insert>
+   
+   
+   <select id="selectAlarm" parameterType="int" resultType="AlarmVO">
+   SELECT
+	    ALM_NUM,
+	    EMP_ID,
+	    ALM_CONTENT,
+	    ALM_ISREAD,
+	    ALM_DATE
+	FROM
+	    ALARM 
+	WHERE ALM_NUM = #{almNum, jdbcType=NUMERIC}
+   
+   
+   </select>
+   
+   
+   <update id="readAlarm" parameterType="int">
+   
+   UPDATE ALARM
+		SET ALM_ISREAD = 'Y'
+	
+	WHERE ALM_NUM = #{almNum,jdbcType=VARCHAR}
+   
+   </update>
+
+
+</mapper>

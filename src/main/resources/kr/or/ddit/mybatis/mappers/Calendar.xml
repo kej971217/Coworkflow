@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.schedule.dao.ScheduleDAO">
+   
+   <!-- 스케쥴 리스트 쿼리 -->
+   <resultMap id="schedule" type="ScheduleVO">
+    <id property="schdlId" column="SCHDL_ID" />
+    <result property="schdlTitle" column="SCHDL_TITLE" />
+    <result property="schdlBgn" column="SCHDL_BGN" />
+    <result property="schdlEnd" column="SCHDL_END" />
+    <result property="isopen" column="ISOPEN" />
+    <result property="schdlDetail" column="SCHDL_DETAIL" />
+    <result property="schdlTypeCode" column="SCHDL_TYPE_CODE" />
+    <result property="alram" column="ALRAM" />
+    <result property="empId" column="EMP_ID" />
+    <result property="schdlMovetime" column="SCHDL_MOVETIME"/>
+    <result property="schdlPlace" column="SCHDL_PLACE"/>
+  </resultMap>
+   
+   <select id="scheduleList" resultMap="schedule" >
+    
+
+	 SELECT DISTINCT SCHDL_ID
+            ,SCHDL_TITLE
+            ,TO_char(SCHDL_BGN, 'YYYY-MM-DD"T"HH24:MI:SS') SCHDL_BGN
+            ,TO_char(SCHDL_END, 'YYYY-MM-DD"T"HH24:MI:SS') SCHDL_END
+            ,ISOPEN
+            ,SCHDL_DETAIL
+            ,SCHDL_TYPE_CODE
+            ,EMP_ID
+            ,SCHDL_MOVETIME
+            ,SCHDL_PLACE
+            ,EMP_ID
+     FROM SCHEDULE
+   </select>
+   
+   <!-- emp목록 가져오기 -->
+   <select id="empList" resultType="EmployeeDPMTVO" parameterType="String">
+   SELECT E.EMP_ID, E.EMP_NAME
+  	FROM ORGANIZATION_INFO O JOIN EMPLOYEE E ON O.EMP_ID=E.EMP_ID
+                           JOIN DEPARTMENT D ON O.TEAM_ID=D.TEAM_ID
+                     AND TEAM_NAME = #{teamName}
+                     ORDER BY TEAM_NAME ASC
+   </select>
+   
+    <select id="departList" resultType="EmployeeDPMTVO">
+   		SELECT TEAM_NAME
+		FROM DEPARTMENT
+   		ORDER BY TEAM_NAME ASC
+   </select>
+   
+   
+   
+   
+   <!-- 스케쥴 상세보기 쿼리 -->
+   <select id="selectSchedule" resultMap="schedule" parameterType="int">
+		    SELECT S.SCHDL_ID
+            ,S.SCHDL_TITLE
+            ,TO_char(SCHDL_BGN, 'YYYY-MM-DD"T"HH24:MI:SS') SCHDL_BGN
+            ,TO_char(SCHDL_END, 'YYYY-MM-DD"T"HH24:MI:SS') SCHDL_END
+            ,S.ISOPEN
+            ,S.SCHDL_DETAIL
+            ,S.SCHDL_TYPE_CODE
+            ,S.EMP_ID
+            ,S.SCHDL_MOVETIME
+            ,S.SCHDL_PLACE
+            ,M.SCHDL_MEMBER_ID
+            ,M.EMP_ID
+            ,M.SCHDL_ID
+        FROM SCHEDULE S LEFT JOIN SCHDL_MEMBER M ON S.SCHDL_ID = M.SCHDL_ID
+       WHERE S.SCHDL_ID = #{schdlId}
+   </select>
+   
+  
+   
+   <!-- 스케쥴 등록 쿼리  -->
+   <insert id="insertSchedule" parameterType="ScheduleVO">
+   <selectKey resultType="int" order="BEFORE" keyProperty="schdlId">
+   select NVL(max(SCHDL_ID),0)+1
+ 	from SCHEDULE
+   </selectKey>
+	INSERT INTO schedule (
+	schdl_id,
+	schdl_title,
+	schdl_bgn,
+	schdl_end,
+	isopen,
+	schdl_detail,
+	schdl_type_code,
+	emp_id,
+	schdl_movetime,
+	schdl_place
+	) VALUES (
+	  
+	#{schdlId,jdbcType=NUMERIC}
+	, #{schdlTitle,jdbcType=VARCHAR}
+	, #{schdlBgn,jdbcType=TIMESTAMP}
+	, #{schdlEnd,jdbcType=TIMESTAMP}
+	, #{isopen,jdbcType=VARCHAR}
+	, #{schdlDetail,jdbcType=VARCHAR}
+	, #{schdlTypeCode,jdbcType=VARCHAR}
+	, #{empId,jdbcType=VARCHAR}
+	, #{schdlMovetime,jdbcType=VARCHAR}
+	, #{schdlPlace,jdbcType=VARCHAR}
+	)
+   
+   </insert>
+   <insert id="insertScheduleMember" parameterType="SchdlMemberVO">
+   <selectKey resultType="int" order="BEFORE" keyProperty="schdlMemberId">
+   select NVL(max(SCHDL_MEMBER_ID),0)+1
+   from SCHDL_MEMBER
+   </selectKey>
+   insert into SCHDL_MEMBER (
+		   schdl_member_id,
+		    emp_id,
+		    schdl_id)
+   values(
+		  #{schdlMemberId,jdbcType=NUMERIC}
+		, #{empId,jdbcType=VARCHAR}
+		, #{schdlId,jdbcType=NUMERIC}
+   )
+   </insert>
+   
+   <!--스케쥴 업데이트-->
+   <update id="updateSchedule" parameterType="ScheduleVO">
+	UPDATE schedule
+		SET
+			SCHDL_TITLE = #{schdlTitle,jdbcType=VARCHAR}
+			,SCHDL_BGN = #{schdlBgn,jdbcType=TIMESTAMP}
+			,SCHDL_END = #{schdlEnd,jdbcType=TIMESTAMP}
+			,ISOPEN = #{isopen,jdbcType=VARCHAR}
+			,SCHDL_DETAIL = #{schdlDetail,jdbcType=VARCHAR}
+			,SCHDL_TYPE_CODE = #{schdlTypeCode,jdbcType=VARCHAR}
+			,EMP_ID = #{empId,jdbcType=VARCHAR}
+			,SCHDL_MOVETIME = #{schdlMovetime,jdbcType=VARCHAR}
+			,SCHDL_PLACE = #{schdlPlace,jdbcType=VARCHAR}
+
+	WHERE	SCHDL_ID = #{schdlId}
+	</update>
+   
+   <!-- 스케줄 삭제 쿼리 -->
+   <delete id="deleteSchedule" parameterType="int">
+   	DELETE FROM schedule
+	 WHERE schdl_id = #{schdlId}
+   
+   </delete>
+   
+   <delete id="deleteScheduleMember" parameterType="int">
+   	DELETE FROM SCHDL_MEMBER
+	 WHERE schdl_id = #{schdlId}
+   </delete>
+   
+   
+   
+	<select id="selectMyScheduleList" parameterType="String" resultType="ScheduleVO">
+		SELECT B.*
+		FROM
+		(
+		    SELECT ROWNUM RNUM, A.*
+		    FROM
+		        (
+		        SELECT
+		            S.schdl_id,
+		            S.schdl_title,
+		            S.schdl_bgn,
+		            S.schdl_end,
+		            S.isopen,
+		            S.schdl_detail,
+		            S.schdl_type_code,
+		            S.emp_id,
+		            S.schdl_movetime,
+		            S.schdl_place,
+		            
+		            M.schdl_member_id,
+		            M.emp_id AS emp_info_id
+<!-- 		        schdl_id -->
+		            
+		        FROM
+		            schedule S LEFT OUTER JOIN schdl_member M on (S.schdl_id = M.schdl_id)
+		        WHERE M.emp_id = #{empId}
+		            and trunc(S.schdl_bgn) >= trunc(sysdate)
+		        ORDER BY S.schdl_bgn ASC
+		        ) A
+		    ) B
+		WHERE RNUM BETWEEN 1 AND 3
+	</select>
+	
+	
+	
+	
+	<select id="selectAttendees" parameterType="int" resultType="ScheduleVO">
+		SELECT 
+		    LISTAGG(EMP_ID,',') WITHIN GROUP (ORDER BY EMP_ID) EMP_INFO_ID
+		    , LISTAGG((SELECT EMP_NAME FROM EMPLOYEE WHERE emp_id = s.emp_id),',') WITHIN GROUP (ORDER BY EMP_ID) EMP_INFO_NAME
+		FROM schdl_member s
+		WHERE schdl_id = #{schdlId}
+	</select>
+</mapper>

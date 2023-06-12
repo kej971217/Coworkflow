@@ -1,0 +1,59 @@
+package kr.or.ddit.mail.service;
+
+import kr.or.ddit.mail.component.MailCacheInfoAboutTeamResolver;
+import kr.or.ddit.mail.vo.MailSendVO;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+
+import javax.inject.Inject;
+import java.util.List;
+
+@Slf4j
+@Service
+public class MailCacheTeamListImpl implements MailCacheTeamList{
+
+    @Inject
+    private final MailCacheInfoAboutTeamResolver mailCacheInfoAboutTeamResolver;
+
+    public MailCacheTeamListImpl(MailCacheInfoAboutTeamResolver mailCacheInfoAboutTeamResolver) {
+        this.mailCacheInfoAboutTeamResolver = mailCacheInfoAboutTeamResolver;
+    }
+
+
+    /**
+     *
+     * 팀 목록 저장
+     *
+     * @param empId
+     * @param mailProjectList
+     * @return 팀 정보(List<MailSendVO>)
+     */
+    @Cacheable(cacheNames = "mailTeamList", key = "#empId", cacheResolver = "mailCacheTeamListResolver")
+    public List<MailSendVO> saveTeamList(String empId, List<MailSendVO> mailProjectList) {
+//        log.info("프로젝트 목록 정보 캐시 저장");
+        return mailProjectList;
+    }
+//    public Map<String, Object> saveInfoAboutTeam(String empId, Map<String, Object> addressMap) {
+//        log.info("팀 정보 저장");
+//        return addressMap;
+//    }
+
+    /**
+     * 팀 목록 저장 가져오기
+     *
+     * @param empId
+     * @return List<MailSendVO>
+     */
+    public List<MailSendVO> getTeamList(String empId) {
+//        log.info("팀 목록 정보 캐시 가져오기 진입");
+        Object teamMap = mailCacheInfoAboutTeamResolver.getMailInfoAboutTeam(empId);
+//        log.info("팀 목록 정보 : {}", teamMap);
+
+        if (teamMap != null) {
+            return (List<MailSendVO>) teamMap;
+        } else {
+            return null;
+        }
+    }
+}

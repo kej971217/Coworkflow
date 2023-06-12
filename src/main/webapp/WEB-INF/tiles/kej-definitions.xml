@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd" >
+<tiles-definitions>
+  <definition name="parent" template="/WEB-INF/jsp/template_theme.jsp">
+  	<put-attribute name="title" value="Coworkflow" />
+  	
+  	
+  	<put-attribute name="preScript" value="/includee/01_preScript.jsp" />
+  	<put-attribute name="mobileMenu" value="/includee/02_mobileMenu.jsp" />
+  	<put-attribute name="topBar" value="/includee/03_topBar.jsp" />
+  	<put-attribute name="topMenu" value="/includee/04_topMenu.jsp" />
+  	
+<!--   	<put-attribute name="content" value="/includee/05_content.jsp" /> -->
+
+  	<put-attribute name="footer" value="/includee/06_footer.jsp" />
+  	<put-attribute name="postScript" value="/includee/07_postScript.jsp" />
+
+	</definition>
+	<!--    ■ 팝업창 topbar 없음. -->
+   <definition name="popup" template="/WEB-INF/jsp/template_pop.jsp">
+        <put-attribute name="title" value="Coworkflow" />
+        <put-attribute name="preScript" value="/includee/preScript_pop.jsp" />
+        
+   <!--      <put-attribute name="content" value="/includee/05_content.jsp" /> -->
+   
+        <put-attribute name="footer" value="/includee/06_footer.jsp" />
+        <put-attribute name="postScript" value="/includee/07_postScript.jsp" />
+
+   </definition>
+   
+   <definition name="draft/*" extends="popup">
+      <put-attribute name="body" value="/WEB-INF/jsp/draft/{1}.jsp" />
+   </definition>
+<!--    팝업창 끝 -->
+   
+	
+	
+	<definition name="approval/*" extends="parent">
+		<put-attribute name="body" value="/WEB-INF/jsp/approval/{1}.jsp" />
+	</definition>
+	
+	<definition name="mypage/*" extends="parent">
+		<put-attribute name="body" value="/WEB-INF/jsp/mypage/{1}.jsp" />
+	</definition>
+	
+<!-- 	<definition name="/*" extends="parent"> -->
+<!-- 	  	<put-attribute name="mobileMenu" value="/WEB-INF/jsp/none.jsp" /> -->
+<!-- 	  	<put-attribute name="topBar" value="/WEB-INF/jsp/none.jsp" /> -->
+<!-- 	  	<put-attribute name="topMenu" value="/WEB-INF/jsp/none.jsp" /> -->
+<!-- 		<put-attribute name="body" value="/WEB-INF/jsp/draft/{1}.jsp" /> -->
+<!-- 	</definition> -->
+</tiles-definitions>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

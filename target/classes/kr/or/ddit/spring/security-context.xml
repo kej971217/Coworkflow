@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.0.xsd
+		http://www.springframework.org/schema/security
+		http://www.springframework.org/schema/security/spring-security-5.7.xsd">
+	
+	<!-- 1. Filter, XML, In memory 기반의 인증구조  -->
+	<!-- 2. Role 기반의 선택적 랜더링 : ex) 관리자에게는 관리자에 맞는 메뉴구조 랜더링, 커스텀 태그 사용 -->
+	<!-- 3. MVC 모든 레이어에서 인증 객체를 확보하는 방법. -->
+	<!-- 4. 데이터베이스 기반의 인증구조 -->
+	<!-- 5. 비밀번호 단방향 암호화 -->
+	<!-- 6. 설정 커스터마이징 -->
+
+	<task:annotation-driven/><!-- Async 사용할 수 있는 설정 -->
+
+ 
+ 	<bean id="passwordEncoder" class="org.springframework.security.crypto.factory.PasswordEncoderFactories" 
+		factory-method="createDelegatingPasswordEncoder"
+	/>
+	   
+   <bean id="authenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider" 
+      p:userDetailsService-ref="userDetailServiceImpl"
+      p:passwordEncoder-ref="passwordEncoder"
+   />
+
+ 	<security:authentication-manager id="authManager">
+		<security:authentication-provider user-service-ref="userDetailServiceImpl">
+<!-- 		<security:authentication-provider> -->
+<!--  				<security:user-service > -->
+<!--  					<security:user name="a001" password="java" authorities="ROLE_USER"/> -->
+<!--  					<security:user name="c001" password="java" authorities="ROLE_ADMIN"/> -->
+<!--  				</security:user-service> -->
+			<security:password-encoder ref="passwordEncoder"/>
+		</security:authentication-provider>
+	</security:authentication-manager>
+ 		
+ 		<bean id="authenticationFailureHandler" class="kr.or.ddit.role.handler.CustomAuthenticationFailureHandler" 
+		p:targetURL="/login"
+	/>
+ 		
+ 		
+<security:http pattern="/resources/**" security="none" />
+	<security:http>
+		  <!-- login-page= 커스터 마이징하는 조건 login 페이지 연결. -->
+		<security:form-login 
+			default-target-url="/index.do" always-use-default-target="true"
+			login-page="/login"
+			username-parameter="empId"
+			password-parameter="empPass"
+			authentication-failure-handler-ref="authenticationFailureHandler"
+		/>
+		<security:logout logout-url="/logout"
+			logout-success-url="/login"
+		/>
+<!-- 		Authorization -->
+<!-- 	AuthorizationManager -->
+		<security:intercept-url pattern="/passwordFindSMS" access="permitAll"/>
+		<security:intercept-url pattern="/passwordFindForm" access="permitAll"/>
+		<security:intercept-url pattern="/login" access="permitAll"/>
+		<security:intercept-url pattern="/**" access="isAuthenticated()"/>
+<!-- 		<security:intercept-url pattern="/**" access="permitAll"/> -->
+		<security:intercept-url pattern="/index.do" access="permitAll"/>
+<!-- 		<security:intercept-url pattern="/board/boardInsert.do" access="hasRole('ADMIN')"/> -->
+		
+	</security:http>
+
+
+</beans>

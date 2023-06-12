@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "manifest-craft-386423",
+  "private_key_id": "12b1b1bde9671f6ffccfb8443c579bb5999baef3",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDXB6q/nPWI/bNj\nn6Ckipg8T5cuvwTO1mzro84/2h4YfFg1DklmMWpVYzkmLugXWiLsLu82wMgAlFjX\nY3h+K6eEQMzDozC//r5e9AO0OhojM3goiSecisVAOXE2qba8jpgmkuRjhahw7u4x\n9Lsj9q0U5O0zNnVq4xufL2teSbfLmERZ7Ug2miFGee/1bpwuw4H55Ii5CDcYEONe\nXsXdzABOFkMk03eOhdfW7vp+hTxdGTcPFiC7qSF5TLEGPAF7OA06s7CNRUBL1WV4\nAOAm5y091uCZG3HQIO6rpWgT4rCbCBl+oKW4m3bWrRk9GvLXBXrjQPYaBfNqMg7l\nnyNALGNVAgMBAAECggEAHFPmfvFE2IwBqL90CJE4noNmuZIRJlWRylZNWtSXj+a7\nsRuleEjMxxx4ACuASGlHvgEt4vLxNkBU1uVED60dF7t4rlJOnxCGkFhJr6HS5S3H\n5+Evvnv6oewfWdHwYLVRXo2N+H14dA5KA3tH9yQtZ5oEFLHZNKBgOG+lD6obBD9Y\nV/E34RIQUTLEYqTVb1Os/bOepgC3eoPpZ1CgW2PoPnT7+L9Pt0gIEd8cCIwAWS9J\nhjYTpmPsIHF+5ZUng5RFofJBdqRqsMXHK0wo7qbXio52H9I8iXQyQI9oCSJP70GC\ncSgvlclqiitxLCB87L8v+hqzCEpXD/tzP3Z5eDpFUQKBgQD6mOCpeh9ibN96nMKy\nRy24J1tOTdY2CqojlTp3RVW8CZMtvWRezTphFsqaHFYjQE4/KqPvZVuGdBmumzLU\n9tThqTh5qX6U4aZSEj4MZhHFf10Z147Y/mb16Qej6Tg+IW035V+igMGWUujeb0du\nmWc8ZWKVifhP9CfdvLr3Bb165QKBgQDbqnulexA/5CJn9iggi/tz1oGJxrXAdyXU\nncTRamYLJhsCrCoIc53PMBHRV5NFG/Ga2tBalS77nr5lgJVPN4BGG2CAYCTFseGR\n0AkbtQoHur1UvUEBd5Kl9ZqguZp0rpfX8x9hjctxLCA6E1S96Zk2LF4QxZ8puBKI\nMC+wS6sPsQKBgQDOSZzfRm2he1g4OeU4Fsn3B0btXbvRvtOx+P0pA8WAxi0HARon\nxC+jjrx3Qo5R9HS1IOfUgQ5nzxj5GD8u+oXhwYiA9lsCOgLNGsFDOZ61gpPkWwL3\nc+zTz+F/N9QZqTCcS9B/GBjEIzoZKWeXDubh29/ck7f6MVXD/cG26V3CVQKBgEOb\nApb5exTO16/7WHo72tXZ7OBEYeesQ95d+BcjkehYf/OgnQcg3i7H8pPlShP497Db\nK0jVpTIXty1yF4Hb6QSqpFaeQHL/vhasWkFGxKGAXYjY/kq/TEj7f+17cgf7PAxg\nbQYPJ8/a7sgw7uHMJTVBDmpHCCdE2Z9EhUjS4QDhAoGAR3Hq2gEV2b2EeQ9UywqU\nruJ/cpVMCH6Fh83+4gwiJ62tywCZXiJ+IM72loAhxb+r+XJn8an+HJ4gLFQy2PXK\nwlu87b6b+gn5b44dzv5g7DF3ToWJVxI7yi0Or2OljpQreX24YT5f3Qrf9NHXRBfi\nAufhMj3S7kl/IddC6EVNqgw=\n-----END PRIVATE KEY-----\n",
+  "client_email": "coworkflow@manifest-craft-386423.iam.gserviceaccount.com",
+  "client_id": "106151484639968314775",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/coworkflow%40manifest-craft-386423.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

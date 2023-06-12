@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.employeeInfo.dao.VacationDAO">
+
+	<select id="selectMyVacationList" parameterType="VacationVO" resultType="VacationVO">
+	SELECT ROWNUM RNUM, X.*
+	FROM
+	(
+		SELECT
+		    d.emp_id,
+		    d.emp_name,
+		    d.emp_pass,
+		    d.emp_bir,
+		    d.company_id,
+		    d.emp_atch_id,
+<!-- 		    d.isuse, -->
+		    d.emp_date,
+		    d.departure_date,
+		    d.emp_num,
+		    d.emp_gend,
+		    
+<!-- 		    e.team_id, -->
+		    e.team_name,
+		    e.team_goal,
+		    e.quartly_goal,
+<!-- 		    e.isuse, -->
+		    e.belong_team,
+<!-- 		    e.emp_id, -->
+		    
+		    f.ognzt_id,
+<!-- 		    f.emp_id, -->
+<!-- 		    f.team_id, -->
+<!-- 		    f.isuse, -->
+		    f.appointment_date,
+		    f.rank_id,
+		    f.position_id,
+		    f.job_id,
+		    
+		    b.leave_record_id,
+		    b.leave_start,
+		    b.leave_end,
+		    b.leave_occurrence,
+		    b.leave_reason,
+		    b.leave_doc_num,
+<!-- 		    b.emp_id, -->
+		    b.leave_kind,
+		    
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = f.rank_id) RANK_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = f.position_id) POSITION_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = f.job_id) JOB_NAME
+		   
+		FROM employee d
+		        INNER JOIN organization_info f ON (d.emp_id = f.emp_id)
+		        INNER JOIN department e ON (e.team_id = f.team_id)
+		        INNER JOIN annual_leave_record b ON (d.emp_id = b.emp_id)
+		        
+		WHERE d.emp_id = #{empId,jdbcType=VARCHAR}
+		ORDER BY b.leave_start DESC
+	) X
+	</select>
+
+	<select id="selectTeamVacationList" parameterType="VacationVO" resultType="VacationVO">
+	SELECT ROWNUM RNUM, X.*
+	FROM
+	(
+		SELECT
+		    d.emp_id,
+		    d.emp_name,
+		    d.emp_pass,
+		    d.emp_bir,
+		    d.company_id,
+		    d.emp_atch_id,
+<!-- 		    d.isuse, -->
+		    d.emp_date,
+		    d.departure_date,
+		    d.emp_num,
+		    d.emp_gend,
+		    
+<!-- 		    e.team_id, -->
+		    e.team_name,
+		    e.team_goal,
+		    e.quartly_goal,
+<!-- 		    e.isuse, -->
+		    e.belong_team,
+<!-- 		    e.emp_id, -->
+		    
+		    f.ognzt_id,
+<!-- 		    f.emp_id, -->
+<!-- 		    f.team_id, -->
+<!-- 		    f.isuse, -->
+		    f.appointment_date,
+		    f.rank_id,
+		    f.position_id,
+		    f.job_id,
+		    
+		    b.leave_record_id,
+		    b.leave_start,
+		    b.leave_end,
+		    b.leave_occurrence,
+		    b.leave_reason,
+		    b.leave_doc_num,
+<!-- 		    b.emp_id, -->
+		    b.leave_kind,
+		    
+		   	(SELECT COMM_NAME FROM COMM WHERE COMM_ID = f.rank_id) RANK_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = f.position_id) POSITION_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = f.job_id) JOB_NAME 
+		   
+		FROM employee d
+		        INNER JOIN organization_info f ON (d.emp_id = f.emp_id)
+		        INNER JOIN department e ON (e.team_id = f.team_id)
+		        INNER JOIN annual_leave_record b ON (d.emp_id = b.emp_id)
+		WHERE f.team_id = (SELECT TEAM_ID FROM ORGANIZATION_INFO WHERE EMP_ID = #{empId,jdbcType=VARCHAR})
+		ORDER BY b.leave_start DESC
+	) X
+	</select>
+	
+	
+	<select id="selectTodayTeamVacationList" resultType="VacationVO">
+	SELECT ROWNUM RNUM, X.*
+	FROM
+	(
+		SELECT
+		    d.emp_id,
+		    d.emp_name,
+		    d.emp_pass,
+		    d.emp_bir,
+		    d.company_id,
+		    d.emp_atch_id,
+<!-- 		    d.isuse, -->
+		    d.emp_date,
+		    d.departure_date,
+		    d.emp_num,
+		    d.emp_gend,
+		    
+<!-- 		    e.team_id, -->
+		    e.team_name,
+		    e.team_goal,
+		    e.quartly_goal,
+<!-- 		    e.isuse, -->
+		    e.belong_team,
+<!-- 		    e.emp_id, -->
+		    
+		    f.ognzt_id,
+<!-- 		    f.emp_id, -->
+<!-- 		    f.team_id, -->
+<!-- 		    f.isuse, -->
+		    f.appointment_date,
+		    f.rank_id,
+		    f.position_id,
+		    f.job_id,
+		    
+		    b.leave_record_id,
+		    b.leave_start,
+		    b.leave_end,
+		    b.leave_occurrence,
+		    b.leave_reason,
+		    b.leave_doc_num,
+<!-- 		    b.emp_id, -->
+		    b.leave_kind,
+		    
+		   	(SELECT COMM_NAME FROM COMM WHERE COMM_ID = f.rank_id) RANK_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = f.position_id) POSITION_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = f.job_id) JOB_NAME 
+		   
+		FROM employee d
+		        INNER JOIN organization_info f ON (d.emp_id = f.emp_id)
+		        INNER JOIN department e ON (e.team_id = f.team_id)
+		        INNER JOIN annual_leave_record b ON (d.emp_id = b.emp_id)
+		WHERE f.team_id = (SELECT TEAM_ID FROM ORGANIZATION_INFO WHERE EMP_ID = #{empId,jdbcType=VARCHAR})
+				AND SYSDATE BETWEEN TRUNC(b.leave_start) AND TRUNC(b.leave_end)
+		ORDER BY b.leave_start DESC
+	) X
+	</select>
+</mapper>

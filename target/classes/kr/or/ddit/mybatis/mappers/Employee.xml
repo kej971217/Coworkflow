@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.employee.dao.EmpDAO">
+
+	<select id="selectEmp" parameterType="string" resultType="EmployeeVO">
+	  SELECT
+		    EMP_ID,
+		    EMP_NAME,
+		    EMP_PASS,
+		    EMP_BIR,
+		    COMPANY_ID,
+		    EMP_ATCH_ID,
+		    ISUSE,
+		    EMP_DATE,
+		    DEPARTURE_DATE,
+		    EMP_NUM,
+		    EMP_GEND
+		FROM
+		    EMPLOYEE
+		WHERE EMP_ID = #{empId,jdbcType=VARCHAR}
+			AND ISUSE = 0
+	</select>
+	
+	<select id="selectEmpDetail" parameterType="String" resultType="EmployeeVO">
+		SELECT
+		    A.EMP_ID,
+		    A.EMP_NAME,
+		    A.EMP_BIR,
+		    A.COMPANY_ID,
+		    A.EMP_ATCH_ID,
+		    A.ISUSE,
+		    A.EMP_DATE,
+		    A.DEPARTURE_DATE,
+		    A.EMP_NUM,
+		    A.EMP_GEND,
+		    
+		    B.EMP_INFO_ID,
+		    B.INFO_HP,
+		    B.INFO_EMAIL,
+		    B.INFO_ADDR,
+		    B.COM_TEL,
+		    B.INFO_ADDRDETAIL,
+		    B.INFO_EMAIL_PASS,
+		    (SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = A.EMP_ID) AS EMP_NAME,
+		    
+		    C.OGNZT_ID,
+		    C.EMP_ID,
+		    C.TEAM_ID,
+		    C.ISUSE,
+		    C.APPOINTMENT_DATE,
+		    C.RANK_ID,
+		    C.POSITION_ID,
+		    C.JOB_ID,
+		    
+            D.TEAM_NAME,
+            D.TEAM_GOAL,
+            D.QUARTLY_GOAL,
+            D.BELONG_TEAM,
+
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = RANK_ID) AS RANK_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = POSITION_ID) AS POSITION_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = JOB_ID) AS JOB_NAME
+		FROM
+		    EMPLOYEE A INNER JOIN EMPLOYEE_INFO B ON (A.EMP_ID = B.EMP_ID)
+		                RIGHT OUTER JOIN ORGANIZATION_INFO C ON (A.EMP_ID = C.EMP_ID)
+                        RIGHT OUTER JOIN DEPARTMENT D ON (C.TEAM_ID = D.TEAM_ID)
+		WHERE
+		    A.EMP_ID = #{empId,jdbcType=VARCHAR}
+	</select>
+	
+	<update id="updateEmp" parameterType="EmployeeVO">
+		UPDATE EMPLOYEE
+		SET EMP_PASS = #{empPass,jdbcType=VARCHAR}
+		WHERE EMP_ID = #{empId,jdbcType=VARCHAR}
+	</update>
+	
+	
+	<select id="allEmpList" resultType="EmployeeVO">
+		SELECT
+		    A.EMP_ID,
+		    A.EMP_NAME,
+		    A.EMP_BIR,
+		    A.COMPANY_ID,
+		    A.EMP_ATCH_ID,
+		    A.ISUSE,
+		    A.EMP_DATE,
+		    A.DEPARTURE_DATE,
+		    A.EMP_NUM,
+		    A.EMP_GEND,
+		    
+		    B.EMP_INFO_ID,
+		    B.INFO_HP,
+		    B.INFO_EMAIL,
+		    B.INFO_ADDR,
+		    B.COM_TEL,
+		    B.INFO_ADDRDETAIL,
+		    B.INFO_EMAIL_PASS,
+		    (SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = A.EMP_ID) AS EMP_NAME,
+		    
+		    C.OGNZT_ID,
+		    C.EMP_ID,
+		    C.TEAM_ID,
+		    C.ISUSE,
+		    C.APPOINTMENT_DATE,
+		    C.RANK_ID,
+		    C.POSITION_ID,
+		    C.JOB_ID,
+		    
+            D.TEAM_NAME,
+            D.TEAM_GOAL,
+            D.QUARTLY_GOAL,
+            D.BELONG_TEAM,
+
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = RANK_ID) AS RANK_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = POSITION_ID) AS POSITION_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = JOB_ID) AS JOB_NAME
+		FROM
+		    EMPLOYEE A INNER JOIN EMPLOYEE_INFO B ON (A.EMP_ID = B.EMP_ID)
+		                RIGHT OUTER JOIN ORGANIZATION_INFO C ON (A.EMP_ID = C.EMP_ID)
+                        RIGHT OUTER JOIN DEPARTMENT D ON (C.TEAM_ID = D.TEAM_ID)
+		WHERE ISUSE = 0 
+	
+	</select>
+
+	<select id="excludedMeEmpList" parameterType="String" resultType="EmployeeVO">
+		 SELECT
+		    A.EMP_ID,
+		    A.EMP_NAME,
+		    A.EMP_BIR,
+		    A.COMPANY_ID,
+		    A.EMP_ATCH_ID,
+		    A.ISUSE,
+		    A.EMP_DATE,
+		    A.DEPARTURE_DATE,
+		    A.EMP_NUM,
+		    A.EMP_GEND,
+		    
+		    B.EMP_INFO_ID,
+		    B.INFO_HP,
+		    B.INFO_EMAIL,
+		    B.INFO_ADDR,
+		    B.COM_TEL,
+		    B.INFO_ADDRDETAIL,
+		    B.INFO_EMAIL_PASS,
+		    (SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = A.EMP_ID) AS EMP_NAME,
+		    
+		    C.OGNZT_ID,
+		    C.EMP_ID,
+		    C.TEAM_ID,
+		    C.ISUSE,
+		    C.APPOINTMENT_DATE,
+		    C.RANK_ID,
+		    C.POSITION_ID,
+		    C.JOB_ID,
+		    
+            D.TEAM_NAME,
+            D.TEAM_GOAL,
+            D.QUARTLY_GOAL,
+            D.BELONG_TEAM,
+
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = RANK_ID) AS RANK_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = POSITION_ID) AS POSITION_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = JOB_ID) AS JOB_NAME,
+            NVL( (SELECT EMP_ATCH_SAVE_NAME FROM EMP_ATCH_FILE WHERE EMP_ATCH_CLASFCT = 0 AND EMP_ATCH_ID = A.EMP_ATCH_ID), 'profile-12.jpg')  EMP_ATCH_SAVE_NAME   
+            
+		FROM
+		    EMPLOYEE A INNER JOIN EMPLOYEE_INFO B ON (A.EMP_ID = B.EMP_ID)
+		                RIGHT OUTER JOIN ORGANIZATION_INFO C ON (A.EMP_ID = C.EMP_ID)
+                        RIGHT OUTER JOIN DEPARTMENT D ON (C.TEAM_ID = D.TEAM_ID)
+		WHERE ISUSE = 0 
+		and not(a.emp_id = #{empId,jdbcType=VARCHAR})
+	
+	</select>
+
+	<select id="includedNameEmpList" parameterType="String" resultType="EmployeeVO">
+		 SELECT
+		    A.EMP_ID,
+		    A.EMP_NAME,
+		    A.EMP_BIR,
+		    A.COMPANY_ID,
+		    A.EMP_ATCH_ID,
+		    A.ISUSE,
+		    A.EMP_DATE,
+		    A.DEPARTURE_DATE,
+		    A.EMP_NUM,
+		    A.EMP_GEND,
+		    
+		    B.EMP_INFO_ID,
+		    B.INFO_HP,
+		    B.INFO_EMAIL,
+		    B.INFO_ADDR,
+		    B.COM_TEL,
+		    B.INFO_ADDRDETAIL,
+		    B.INFO_EMAIL_PASS,
+		    (SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = A.EMP_ID) AS EMP_NAME,
+		    
+		    C.OGNZT_ID,
+		    C.EMP_ID,
+		    C.TEAM_ID,
+		    C.ISUSE,
+		    C.APPOINTMENT_DATE,
+		    C.RANK_ID,
+		    C.POSITION_ID,
+		    C.JOB_ID,
+		    
+            D.TEAM_NAME,
+            D.TEAM_GOAL,
+            D.QUARTLY_GOAL,
+            D.BELONG_TEAM,
+
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = RANK_ID) AS RANK_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = POSITION_ID) AS POSITION_NAME,
+		    (SELECT COMM_NAME FROM COMM WHERE COMM_ID = JOB_ID) AS JOB_NAME,
+		    NVL( (SELECT EMP_ATCH_SAVE_NAME FROM EMP_ATCH_FILE WHERE EMP_ATCH_CLASFCT = 0 AND EMP_ATCH_ID = A.EMP_ATCH_ID), 'profile-12.jpg')  EMP_ATCH_SAVE_NAME
+		FROM
+		    EMPLOYEE A INNER JOIN EMPLOYEE_INFO B ON (A.EMP_ID = B.EMP_ID)
+		                RIGHT OUTER JOIN ORGANIZATION_INFO C ON (A.EMP_ID = C.EMP_ID)
+                        RIGHT OUTER JOIN DEPARTMENT D ON (C.TEAM_ID = D.TEAM_ID)
+		WHERE ISUSE = 0 
+<!-- 		and a.emp_name = #{empName,jdbcType=VARCHAR} -->
+ 		and a.emp_name LIKE '%' || #{empName,jdbcType=VARCHAR} || '%' 
+	
+	</select>
+
+</mapper>

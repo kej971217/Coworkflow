@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mypage.dao.MypageDAO">
+	<resultMap type="MypageVO" id="mypageMap" autoMapping="true">
+		<id property="empId" column="EMP_ID"/>
+	</resultMap>
+	<select id="selectEmployee" parameterType="string" resultMap="mypageMap">
+		SELECT
+		    I.emp_info_id,
+		    I.info_hp,
+		    I.info_email,
+		    I.info_addr,
+		    I.com_tel,
+		    I.info_addrdetail,
+		    I.info_email_pass,
+		    I.emp_id,
+		    E.emp_id,
+		    E.emp_name,
+		    E.emp_pass,
+		    E.emp_bir,
+		    E.company_id,
+		    E.emp_atch_id,
+		    E.isuse,
+		    TO_CHAR(E.emp_date, 'YYYY-MM-DD') as emp_date,
+		    TO_CHAR(E.departure_date, 'YYYY-MM-DD') as departure_date,
+		    E.emp_num,
+		    E.emp_gend,
+		    DOC.team_name,
+		    DOC.position_name,
+		    DOC.job_name,
+		    DOC.rank_name
+		FROM
+		    employee E
+		    LEFT OUTER JOIN EMPLOYEE_INFO I ON (I.emp_id=E.emp_id),
+		    (
+		        SELECT
+		            D.team_name,
+		            P.COMM_NAME position_name,
+		            J.COMM_NAME job_name,
+		            R.comm_name rank_name
+		        FROM
+		            ORGANIZATION_INFO O
+		            JOIN DEPARTMENT D ON (D.TEAM_ID=O.TEAM_ID)
+		            JOIN COMM P ON (P.COMM_ID = O.POSITION_ID)
+		            JOIN COMM R ON (R.COMM_ID = O.RANK_ID)
+		            JOIN COMM J ON (J.COMM_ID = O.JOB_ID)
+		        WHERE
+		            O.EMP_ID = #{empId,jdbcType=VARCHAR}
+		    ) DOC
+		WHERE
+		    E.EMP_ID = #{empId,jdbcType=VARCHAR}
+	</select>
+	
+	
+	<update id="updateMypage" parameterType="MypageVO">
+		UPDATE employee_info
+			SET
+			    info_hp = #{infoHp,jdbcType=VARCHAR},
+			    com_tel = #{comTel,jdbcType=VARCHAR},
+			    info_addr = #{infoAddr,jdbcType=VARCHAR},
+			    info_addrdetail = #{infoAddrdetail,jdbcType=VARCHAR}
+			WHERE
+			    emp_id = #{empId,jdbcType=VARCHAR}
+	</update>
+	<update id="insertAtchId" parameterType="MypageVO">
+	UPDATE employee
+		SET
+			EMP_ATCH_ID = #{empAtchId,jdbcType=NUMERIC}
+	WHERE
+		emp_id = #{empId,jdbcType=VARCHAR}
+	</update>
+	
+	
+	<update id="updatePass" parameterType="MypageVO">
+		UPDATE employee
+			SET
+			    emp_pass = #{empPass,jdbcType=VARCHAR}
+			WHERE
+			    emp_id = #{empId,jdbcType=VARCHAR}
+	</update>
+	<select id="selectUpperDPMT" resultType="DepartmentVO">
+		select distinct team_id, team_name
+		from department
+		where belong_team = 1
+	</select>
+	
+	<select id="selectTeamInfo"  resultType="DepartmentVO">
+		select 
+			    team_id,
+			    team_name,
+			    team_goal,
+			    quartly_goal,
+			    isuse,
+			    belong_team,
+			    emp_id
+		from department 
+	</select>
+	
+	<select id="selectTeamEmpList" resultType="OrganizationInfoVO">
+		     SELECT DISTINCT
+			    o.ognzt_id,
+			    o.emp_id,
+			    o.team_id,
+			    o.isuse,
+			    o.appointment_date,
+			    o.rank_id,
+			    o.position_id,
+			    o.job_id,
+			    e.emp_id,
+			    e.emp_name,
+			    d.team_name,
+			    (SELECT comm_name FROM comm WHERE comm_id = o.rank_id) AS rank_name,
+			    (SELECT comm_name FROM comm WHERE comm_id = o.position_id) AS position_name
+			FROM
+			    organization_info o
+			    JOIN EMPLOYEE e ON o.emp_id = e.emp_id
+			    JOIN department d ON d.team_id = o.team_id
+			ORDER BY o.team_id ASC, o.position_id
+			
+	</select>
+	
+	
+	<insert id="insertDeputyApprover" parameterType="DeputyApproverVO">
+	INSERT INTO deputy_approver (
+	    deputy_approver_id,
+	    deputy_approver_bgn,
+	    deputy_approver_end,
+	    deputy_approver_reason,
+	    deputy_approver_emp,
+	    emp_id
+	) VALUES (
+	    DEPUTY_SEQ.nextval,
+	    #{deputyApproverBgn,jdbcType=DATE},
+	    #{deputyApproverEnd,jdbcType=DATE},
+	    #{deputyApproverReason,jdbcType=VARCHAR},
+	    #{deputyApproverEmp,jdbcType=VARCHAR},
+	    #{empId,jdbcType=VARCHAR}
+	)
+	</insert>
+	
+	<select id="selectDeputyApprover" parameterType="DeputyApproverVO" resultType="DeputyApproverVO">
+		SELECT
+		    D.deputy_approver_id,
+		    TO_char(D.deputy_approver_bgn,'YYYY-MM-DD') deputy_approver_bgn,
+		    TO_char(D.deputy_approver_end,'YYYY-MM-DD') deputy_approver_end,
+		    D.deputy_approver_reason,
+		    D.deputy_approver_emp,
+		    D.emp_id,
+            E.emp_name,
+            DE.emp_name deputy_emp_name,
+            (select team_name from department where team_id = O.team_id) deputy_team_name,
+            (select comm_name from comm where comm_id = O.position_id) deputy_position_name
+		FROM
+		    deputy_approver D join EMPLOYEE E on D.emp_id = E.emp_id
+                            join EMPLOYEE DE on D.deputy_approver_emp = DE.emp_id
+                            join ORGANIZATION_INFO O on D.deputy_approver_emp  = O.emp_id
+		WHERE
+			D.emp_id=#{empId,jdbcType=VARCHAR} or D.deputy_approver_emp = #{empId,jdbcType=VARCHAR} 
+	</select>
+	
+	<update id="updateDeputyApprover" parameterType="DeputyApproverVO">
+	    
+		UPDATE deputy_approver
+		SET
+			deputy_approver_bgn=#{deputyApproverBgn,jdbcType=DATE},
+		    deputy_approver_end=#{deputyApproverEnd,jdbcType=DATE},
+		    deputy_approver_reason=#{deputyApproverReason,jdbcType=VARCHAR},
+		    deputy_approver_emp#{deputyApproverEmp,jdbcType=VARCHAR},
+		WHERE
+		    emp_id = #{empId,jdbcType=VARCHAR} 
+		    
+	</update>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

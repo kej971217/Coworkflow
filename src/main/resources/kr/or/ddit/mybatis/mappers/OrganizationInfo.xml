@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.employee.dao.OrganizationInfoDAO">
+
+	<select id="selectOrgInfoDepList" resultType="OrganizationInfoVO">
+		SELECT 
+		    A.OGNZT_ID
+		    , A.EMP_ID
+		    , A.TEAM_ID
+		    , A.ISUSE
+		    , A.APPOINTMENT_DATE
+		    , A.RANK_ID
+		    , A.POSITION_ID
+		    , A.JOB_ID
+		    
+<!-- 		    , B.TEAM_ID -->
+		    , B.TEAM_NAME
+		    , B.TEAM_GOAL
+		    , B.QUARTLY_GOAL
+<!-- 		    , B.ISSUE -->
+		    , NVL(B.BELONG_TEAM,'0') BELONG_TEAM
+<!-- 		    , B.EMP_ID -->
+			, (SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = A.EMP_ID) AS EMP_NAME
+		    , (SELECT COMM_NAME FROM COMM WHERE COMM_ID = RANK_ID) AS RANK_NAME
+		    , (SELECT COMM_NAME FROM COMM WHERE COMM_ID = POSITION_ID) AS POSITION_NAME
+		    , (SELECT COMM_NAME FROM COMM WHERE COMM_ID = JOB_ID) AS JOB_NAME
+		FROM 
+		    ORGANIZATION_INFO A RIGHT OUTER JOIN DEPARTMENT B ON (A.TEAM_ID = B.TEAM_ID)
+		<![CDATA[
+		WHERE A.APPOINTMENT_DATE <= SYSTIMESTAMP
+		]]>
+		ORDER BY A.TEAM_ID ASC, EMP_NAME ASC
+	</select>
+	
+	<select id="selectOrgInfo" parameterType="string" resultType="OrganizationInfoVO">
+		SELECT 
+		    OGNZT_ID
+		    , EMP_ID
+		    , TEAM_ID
+		    , ISUSE
+		    , APPOINTMENT_DATE
+		    , RANK_ID
+		    , POSITION_ID
+		    , JOB_ID
+		FROM ORGANIZATION_INFO
+		WHERE EMP_ID = #{empId}
+	</select>
+	
+	<select id="selectEmpInfo" parameterType="OrganizationInfoVO" resultType="OrganizationInfoVO">
+		SELECT B.*
+		FROM
+		(
+			SELECT ROWNUM RNUM, A.*
+			FROM
+			(
+				SELECT 
+				    A.OGNZT_ID
+				    , A.EMP_ID
+				    , A.TEAM_ID
+				    , A.ISUSE
+				    , A.APPOINTMENT_DATE
+				    , A.RANK_ID
+				    , A.POSITION_ID
+				    , A.JOB_ID
+				    
+		<!-- 		    , B.TEAM_ID -->
+				    , B.TEAM_NAME
+				    , B.TEAM_GOAL
+				    , B.QUARTLY_GOAL
+		<!-- 		    , B.ISSUE -->
+				    , NVL(B.BELONG_TEAM,'0') BELONG_TEAM
+		<!-- 		    , B.EMP_ID -->
+		
+					, (SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = A.EMP_ID) AS EMP_NAME
+				    , (SELECT COMM_NAME FROM COMM WHERE COMM_ID = A.RANK_ID) AS RANK_NAME
+				    , (SELECT COMM_NAME FROM COMM WHERE COMM_ID = A.POSITION_ID) AS POSITION_NAME
+				    , (SELECT COMM_NAME FROM COMM WHERE COMM_ID = A.JOB_ID) AS JOB_NAME
+				FROM 
+				    ORGANIZATION_INFO A RIGHT OUTER JOIN DEPARTMENT B ON (A.TEAM_ID = B.TEAM_ID)
+				<![CDATA[
+				WHERE A.APPOINTMENT_DATE <= SYSTIMESTAMP
+				]]>
+					AND A.EMP_ID = #{empId}
+				ORDER BY A.TEAM_ID ASC, EMP_NAME ASC
+			) A
+		)B
+	</select>
+	
+	
+	<select id="selectRankCount" resultType="OrganizationInfoVO">
+		SELECT COUNT(RANK_ID) RANK_CNT, RANK_ID, (SELECT COMM_NAME FROM COMM WHERE COMM_ID = RANK_ID) AS RANK_NAME
+		FROM ORGANIZATION_INFO
+		GROUP BY RANK_ID
+		ORDER BY RANK_ID ASC
+	</select>
+	
+	<select id="selectDepEmpCount" resultType="OrganizationInfoVO">
+		SELECT COUNT(O.TEAM_ID) TEAM_CNT, O.TEAM_ID, (SELECT TEAM_NAME FROM DEPARTMENT WHERE TEAM_ID = O.TEAM_ID) TEAM_NAME
+		FROM ORGANIZATION_INFO O
+		GROUP BY O.TEAM_ID
+		ORDER BY O.TEAM_ID ASC
+	</select>
+	
+	<select id="selectDepGendRatio" resultType="OrganizationInfoVO">
+		SELECT 
+		    O.TEAM_ID, 
+		    D.TEAM_NAME, 
+		    COUNT(DECODE(E.EMP_GEND, '남', 1, NULL)) AS MALE_CNT, 
+		    COUNT(DECODE(E.EMP_GEND, '여', 1, NULL)) AS FEMALE_CNT, 
+		    ROUND((COUNT(DECODE(E.EMP_GEND, '남', 1, NULL))/COUNT(E.EMP_ID))*100, 2) AS MALE_PERCENT,
+		    ROUND((COUNT(DECODE(E.EMP_GEND, '여', 1, NULL))/COUNT(E.EMP_ID))*100, 2) AS FEMALE_PERCENT
+		FROM 
+		    ORGANIZATION_INFO O
+		    JOIN EMPLOYEE E ON O.EMP_ID = E.EMP_ID
+		    JOIN DEPARTMENT D ON O.TEAM_ID = D.TEAM_ID
+		GROUP BY 
+		    O.TEAM_ID, 
+		    D.TEAM_NAME
+		ORDER BY 
+		    O.TEAM_ID ASC
+	</select>
+	
+	<select id="selectDepAgeGroupCnt">
+		SELECT
+		    D.TEAM_ID,
+		    D.TEAM_NAME AS TEAM_NAME,
+		    FLOOR((TRUNC(MONTHS_BETWEEN(SYSDATE, CAST(E.EMP_BIR AS DATE))/12))/10)*10 AS AGE_GROUP,
+		    COUNT(*) AS EMP_CNT
+		FROM EMPLOYEE E
+		INNER JOIN ORGANIZATION_INFO O ON E.EMP_ID = O.EMP_ID
+		INNER JOIN DEPARTMENT D ON O.TEAM_ID = D.TEAM_ID
+		
+		GROUP BY
+		    D.TEAM_ID,
+		    D.TEAM_NAME,
+		    FLOOR((TRUNC(MONTHS_BETWEEN(SYSDATE, CAST(E.EMP_BIR AS DATE))/12))/10)*10
+		ORDER BY TEAM_ID ASC, TEAM_NAME, AGE_GROUP ASC
+	</select>
+</mapper>
+
+<!-- 
+, OGNZT_ID = #{ognztId,jdbcType=NUMERIC}
+, EMP_ID = #{empId,jdbcType=VARCHAR}
+, TEAM_ID = #{teamId,jdbcType=NUMERIC}
+, ISSUE = #{issue,jdbcType=NUMERIC}
+, APPOINTMENT_DATE = #{appointmentDate,jdbcType=TIMESTAMP(6)}
+, RANK_ID = #{rankId,jdbcType=VARCHAR}
+, POSITION_ID = #{positionId,jdbcType=VARCHAR}
+, JOB_ID = #{jobId,jdbcType=VARCHAR}
+ -->

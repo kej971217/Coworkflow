@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.employeeInfo.dao.AnnualLeaveRecordDAO">
+	<select id="selectMyAnnualLeaveRecordList" parameterType="AnnualLeaveRecordVO" resultType="AnnualLeaveRecordVO">
+		SELECT B.*
+		FROM
+		(
+		    SELECT ROWNUM RNUM, A.*
+		    FROM
+		    (
+		        SELECT
+		            leave_record_id,
+		            leave_start,
+		            leave_end,
+		            leave_occurrence,
+		            leave_reason,
+		            leave_doc_num,
+		            emp_id,
+		            leave_kind
+		        FROM
+		            annual_leave_record
+		        WHERE INSTR(EMP_ID, #{empId}) > 0
+		        ORDER BY leave_record_id DESC
+		    ) A
+		) B
+	</select>
+</mapper>

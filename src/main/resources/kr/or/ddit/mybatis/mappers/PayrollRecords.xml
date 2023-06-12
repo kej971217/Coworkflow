@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.employeeInfo.dao.PayrollRecordsDAO">
+<!-- 	<sql id="searchFrag"> -->
+<!-- 		<where> -->
+<!-- 			<if test="simpleCondition neq null and @org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)"> -->
+<!-- 				<choose> -->
+<!-- 					<when test="simpleCondition.searchType eq 'writer'"> -->
+<!-- 						INSTR(BO_WRITER, #{simpleCondition.searchWord}) > 0 -->
+<!-- 					</when> -->
+<!-- 					<when test="simpleCondition.searchType eq 'content'"> -->
+<!-- 						INSTR(BO_CONTENT, #{simpleCondition.searchWord}) > 0 -->
+<!-- 					</when> -->
+<!-- 					<otherwise> -->
+<!-- 						INSTR(BO_WRITER, #{simpleCondition.searchWord}) > 0 -->
+<!-- 						OR -->
+<!-- 						INSTR(BO_CONTENT, #{simpleCondition.searchWord}) > 0 -->
+<!-- 					</otherwise> -->
+<!-- 				</choose> -->
+<!-- 			</if> -->
+<!-- 		</where> -->
+<!-- 	</sql> -->
+	<select id="selectMyPayrollRecordsList" parameterType="PayrollRecordsVO" resultType="PayrollRecordsVO">
+		SELECT B.*
+		FROM
+		(
+		    SELECT ROWNUM RNUM, A.*
+		    FROM
+		    (
+		        SELECT
+		            payroll_record_id,
+		            payroll_record_date,
+		            emp_id,
+		            seniority_based_wage,
+		            base_salary,
+		            position_allowance,
+		            overtime_pay,
+		            bonus,
+		            meals,
+		            trans_allowance,
+		            total_payment,
+		            income_tax,
+		            residence_tax,
+		            national_pension,
+		            long_term_care_insurance,
+		            health_insurance,
+		            total_deduction,
+		            net_salary
+		        FROM
+		            payroll_records
+		        WHERE INSTR(EMP_ID, #{empId}) > 0
+		        ORDER BY payroll_record_id DESC
+		    ) A
+		) B
+	</select>
+</mapper>
+
+<!-- , PAYROLL_RECORD_ID -->
+<!-- , PAYROLL_RECORD_DATE -->
+<!-- , EMP_ID -->
+<!-- , SENIORITY_BASED_WAGE -->
+<!-- , BASE_SALARY -->
+<!-- , POSITION_ALLOWANCE -->
+<!-- , OVERTIME_PAY -->
+<!-- , BONUS -->
+<!-- , MEALS -->
+<!-- , TRANS_ALLOWANCE -->
+<!-- , TOTAL_PAYMENT -->
+<!-- , INCOME_TAX -->
+<!-- , RESIDENCE_TAX -->
+<!-- , NATIONAL_PENSION -->
+<!-- , LONG_TERM_CARE_INSURANCE -->
+<!-- , HEALTH_INSURANCE -->
+<!-- , TOTAL_DEDUCTION -->
+<!-- , NET_SALARY -->
+
+<!-- , #{payrollRecordId,jdbcType=NUMERIC} -->
+<!-- , #{payrollRecordDate,jdbcType=TIMESTAMP(6)} -->
+<!-- , #{empId,jdbcType=VARCHAR} -->
+<!-- , #{seniorityBasedWage,jdbcType=NUMERIC} -->
+<!-- , #{baseSalary,jdbcType=NUMERIC} -->
+<!-- , #{positionAllowance,jdbcType=NUMERIC} -->
+<!-- , #{overtimePay,jdbcType=NUMERIC} -->
+<!-- , #{bonus,jdbcType=NUMERIC} -->
+<!-- , #{meals,jdbcType=NUMERIC} -->
+<!-- , #{transAllowance,jdbcType=NUMERIC} -->
+<!-- , #{totalPayment,jdbcType=NUMERIC} -->
+<!-- , #{incomeTax,jdbcType=NUMERIC} -->
+<!-- , #{residenceTax,jdbcType=NUMERIC} -->
+<!-- , #{nationalPension,jdbcType=NUMERIC} -->
+<!-- , #{longTermCareInsurance,jdbcType=NUMERIC} -->
+<!-- , #{healthInsurance,jdbcType=NUMERIC} -->
+<!-- , #{totalDeduction,jdbcType=NUMERIC} -->
+<!-- , #{netSalary,jdbcType=NUMERIC} -->
